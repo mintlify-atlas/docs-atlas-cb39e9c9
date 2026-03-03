@@ -1,0 +1,322 @@
+---
+title: OBS Integration
+description: Learn how Segra leverages ObsKit.NET and OBS Studio for high-performance game recording
+---
+
+Segra's recording engine is built on top of **Open Broadcaster Software (OBS)** using **ObsKit.NET**, a modern C# wrapper that provides type-safe access to OBS's powerful recording capabilities.
+
+## Architecture Overview
+
+Segra uses a layered architecture to interact with OBS:
+
+```
+Segra Application
+       ↓
+   ObsKit.NET (C# Wrapper)
+       ↓
+   OBS Studio (libobs)
+       ↓
+  Hardware Encoders (NVENC/AMF/QSV)
+```
+
+### Core Components
+
+<AccordionGroup>
+  <Accordion title="OBSService - Backend/Recorder/OBSService.cs">
+    The `OBSService` class is the central hub for all recording operations. It manages:
+    - OBS context initialization and shutdown
+    - Video encoder configuration (NVENC, AMF, QSV, x264)
+    - Audio source management (microphones, desktop audio, game audio)
+    - Scene composition with game capture and display capture
+    - Recording outputs (sessions, replay buffer, hybrid mode)
+  </Accordion>
+
+  <Accordion title="ObsKit.NET Integration">
+    ObsKit.NET provides a fluent, type-safe API for interacting with OBS. Segra uses it for:
+    - Video/audio encoder creation
+    - Source management (GameCapture, MonitorCapture, AudioInputCapture)
+    - Output handling (RecordingOutput, ReplayBuffer)
+    - Signal handling for events (hooked/unhooked, replay saved)
+  </Accordion>
+
+  <Accordion title="GPU Vendor Detection">
+    Segra automatically detects your GPU vendor (NVIDIA, AMD, Intel) to select the optimal hardware encoder:
+    - **NVIDIA**: NVENC (H.264/HEVC)
+    - **AMD**: AMF (H.264/HEVC)
+    - **Intel**: QSV (H.264/HEVC)
+    - **Fallback**: x264 (software encoding)
+  </Accordion>
+</AccordionGroup>
+
+## Initialization Process
+
+When Segra starts, it initializes OBS through several stages:
+
+<Steps>
+  <Step title="Check OBS Installation">
+    Verifies that `obs.dll` exists in the application directory. If missing, Segra downloads the appropriate OBS version from Segra's CDN.
+  </Step>
+
+  <Step title="Initialize OBS Context">
+    Creates an OBS context with the fluent API:
+    ```csharp
+    _obsContext = Obs.Initialize(config =>
+    {
+        config
+            .WithLocale("en-US")
+            .WithDataPath("./data/libobs/")
+            .WithModulePath("./obs-plugins/64bit/", "./data/obs-plugins/%module%/")
+            .WithVideo(v => v.Resolution(1920, 1080).Fps(60))
+            .WithAudio(a => a.WithSampleRate(44100).WithSpeakers(SpeakerLayout.Stereo))
+            .WithLogging((level, message) => { /* Log processing */ });
+    });
+    ```
+  </Step>
+
+  <Step title="Detect Available Encoders">
+    Queries OBS for available video encoders and stores them in application state for the settings UI.
+  </Step>
+
+  <Step title="Start Game Detection">
+    Begins monitoring Windows processes for game launches using WMI event watchers.
+  </Step>
+</Steps>
+
+## Recording Pipeline
+
+### Scene Composition
+
+Segra creates a layered scene with multiple capture sources:
+
+<Note>
+  **Layer Order (bottom to top)**:
+  1. Display Capture (fallback layer)
+  2. Game Capture (primary layer when hooked)
+  3. Audio sources (microphones, desktop audio, game audio)
+</Note>
+
+### Game Capture Hooking
+
+Segra uses OBS's game capture plugin to hook directly into games:
+
+```csharp
+GameCaptureSource = new GameCapture("gameplay", GameCapture.CaptureMode.SpecificWindow);
+GameCaptureSource.SetWindow($"*:*:{fileName}");
+
+// Subscribe to hook events
+GameCaptureSource.Hooked += OnGameCaptureHookedEvent;
+GameCaptureSource.Unhooked += OnGameCaptureUnhookedEvent;
+```
+
+<Warning>
+  Some applications are blacklisted by OBS and cannot be captured using game capture:
+  - `explorer.exe`, `chrome.exe`, `discord.exe`, `firefox.exe`
+  - Steam, Battle.net, Origin launchers
+  - Windows system apps
+
+  Segra automatically falls back to display capture for these applications.
+</Warning>
+
+### Audio Routing
+
+Segra supports three audio output modes:
+
+<CardGroup cols={3}>
+  <Card title="All Audio" icon="volume-high">
+    Records all desktop audio sources (default behavior)
+  </Card>
+  <Card title="Game Only" icon="gamepad">
+    Records only game audio using OBS's `capture_audio` feature
+  </Card>
+  <Card title="Game + Discord" icon="comments">
+    Records game audio and Discord voice chat separately
+  </Card>
+</CardGroup>
+
+When game capture hooks successfully, Segra automatically:
+- Mutes desktop audio sources
+- Unmutes game audio and Discord sources (if enabled)
+- Switches back to desktop audio when the game unhooks
+
+### Encoder Configuration
+
+Segra configures encoders based on user settings:
+
+<CodeGroup>
+```csharp CBR (Constant Bitrate)
+videoEncoderSettings.Set("rate_control", "CBR");
+videoEncoderSettings.Set("bitrate", targetBitrateKbps);
+videoEncoderSettings.Set("max_bitrate", targetBitrateKbps);
+```
+
+```csharp VBR (Variable Bitrate)
+videoEncoderSettings.Set("rate_control", "VBR");
+videoEncoderSettings.Set("bitrate", minBitrateKbps);
+videoEncoderSettings.Set("max_bitrate", maxBitrateKbps);
+```
+
+```csharp CQP (Constant Quality)
+videoEncoderSettings.Set("rate_control", "CQP");
+videoEncoderSettings.Set("cqp", cqLevel);
+videoEncoderSettings.Set("qp", cqLevel);
+```
+</CodeGroup>
+
+## Recording Modes
+
+Segra supports three recording modes, each using different OBS output types:
+
+### Session Recording
+
+Uses `RecordingOutput` to record the entire gaming session to an MP4 file:
+
+```csharp
+_output = new RecordingOutput("simple_output", videoOutputPath);
+_output.SetFormat(RecordingFormat.HybridMp4);
+_output.WithVideoEncoder(_videoEncoder);
+_output.WithAudioEncoder(_audioEncoder, track: 0);
+_output.Start();
+```
+
+### Replay Buffer
+
+Uses `ReplayBuffer` to maintain a rolling buffer in memory:
+
+```csharp
+_bufferOutput = new ReplayBuffer(
+    "replay_buffer_output",
+    Settings.Instance.ReplayBufferDuration,
+    Settings.Instance.ReplayBufferMaxSize
+);
+_bufferOutput.SetDirectory(bufferDir);
+_bufferOutput.Start();
+
+// Save the buffer when user presses hotkey
+_bufferOutput.Save();
+```
+
+### Hybrid Mode
+
+Runs both session recording and replay buffer simultaneously, allowing:
+- Full session recording with bookmarks
+- Instant replay saving during gameplay
+- Separate file organization
+
+## Separate Audio Tracks
+
+Segra can record up to 6 audio tracks using OBS's multi-track support:
+
+<Steps>
+  <Step title="Track 1 - Master Mix">
+    All audio sources combined (always present)
+  </Step>
+  <Step title="Tracks 2-6 - Individual Sources">
+    Up to 5 separate audio sources (microphones, game audio, Discord)
+  </Step>
+</Steps>
+
+```csharp
+// Assign source to multiple tracks
+uint mixersMask = (1u << 0) | (1u << (trackIndex + 1));
+allAudioSources[i].AudioMixers = mixersMask;
+
+// Create encoder for each track
+for (int t = 0; t < trackCount; t++)
+{
+    var audioEncoder = AudioEncoder.CreateAac(encoderName, 128, t);
+    _audioEncoders.Add(audioEncoder);
+}
+```
+
+<Tip>
+  Separate audio tracks enable advanced editing workflows where you can independently control game audio, microphone, and Discord volumes in post-production.
+</Tip>
+
+## Display Capture Methods
+
+Segra supports two display capture methods:
+
+| Method | Technology | Performance | Compatibility |
+|--------|-----------|-------------|---------------|
+| **DXGI** | Desktop Duplication API | High | Windows 8+ |
+| **WGC** | Windows Graphics Capture | Very High | Windows 10 1903+ |
+| **Auto** | Selects best available | - | All versions |
+
+```csharp
+var captureMethod = Settings.Instance.DisplayCaptureMethod switch
+{
+    DisplayCaptureMethod.DXGI => MonitorCaptureMethod.DesktopDuplication,
+    DisplayCaptureMethod.WGC => MonitorCaptureMethod.WindowsGraphicsCapture,
+    _ => MonitorCaptureMethod.Auto
+};
+
+_displaySource = MonitorCapture.FromMonitor(monitorIndex, "display")
+    .SetCaptureMethod(captureMethod);
+```
+
+## Resource Management
+
+Segra follows strict resource disposal patterns to prevent memory leaks:
+
+<Steps>
+  <Step title="Stop Outputs">
+    Gracefully stop recording/replay buffer with 30-second timeout
+  </Step>
+  <Step title="Dispose Scene">
+    Remove and dispose all scene items and the scene itself
+  </Step>
+  <Step title="Dispose Sources">
+    Release game capture, display capture, and audio sources
+  </Step>
+  <Step title="Clear Encoders">
+    Encoders are automatically disposed by ObsKit.NET when outputs stop
+  </Step>
+</Steps>
+
+<Warning>
+  Never dispose OBS resources while they are still in use. Always stop outputs before disposing sources and encoders.
+</Warning>
+
+## Log Processing
+
+OBS log messages are processed asynchronously using channels to prevent blocking:
+
+```csharp
+private static readonly Channel<(int level, string message)> _logChannel =
+    Channel.CreateUnbounded<(int, string)>(new UnboundedChannelOptions
+    {
+        SingleReader = true,
+        SingleWriter = false
+    });
+
+// OBS logging callback (non-blocking)
+.WithLogging((level, message) =>
+{
+    _logChannel.Writer.TryWrite(((int)level, message));
+})
+
+// Background processing
+await foreach (var (level, formattedMessage) in _logChannel.Reader.ReadAllAsync())
+{
+    Log.Information($"{(ObsLogLevel)level}: {formattedMessage}");
+}
+```
+
+This prevents OBS's internal logging thread from being blocked by Serilog's file I/O operations.
+
+## Related Resources
+
+<CardGroup cols={2}>
+  <Card title="ObsKit.NET" icon="github" href="https://github.com/Segergren/ObsKit.NET">
+    Modern C# wrapper for OBS Studio
+  </Card>
+  <Card title="OBS Studio" icon="github" href="https://github.com/obsproject/obs-studio">
+    Free and open source recording software
+  </Card>
+  <Card title="Performance" icon="gauge-high" href="/advanced/performance">
+    Optimize recording performance
+  </Card>
+  <Card title="Troubleshooting" icon="wrench" href="/advanced/troubleshooting">
+    Common issues and solutions
+  </Card>
+</CardGroup>

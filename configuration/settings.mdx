@@ -1,0 +1,237 @@
+---
+title: Settings Overview
+description: Configure Segra's recording, audio, video, and application settings
+---
+
+Segra provides comprehensive settings to customize your recording experience. Settings are organized into sections accessible from the Settings page.
+
+## Settings Location
+
+Settings are stored in a JSON file at:
+```
+%AppData%\Segra\settings.json
+```
+
+<Warning>
+Manually editing the settings file is not recommended. Use the Settings UI to ensure proper validation and formatting.
+</Warning>
+
+## Settings Sections
+
+### Account
+
+Manage your Segra account authentication and profile.
+
+- JWT and refresh token storage
+- Account linking and authentication
+
+### Recording
+
+Configure how Segra captures your gameplay.
+
+<CardGroup cols={2}>
+  <Card title="Capture Mode" icon="video" href="/configuration/settings#capture-mode">
+    Choose between Session, Buffer, or Hybrid recording modes
+  </Card>
+  <Card title="Video Settings" icon="sliders" href="/configuration/video-presets">
+    Resolution, framerate, encoder, and codec configuration
+  </Card>
+  <Card title="Audio Devices" icon="microphone" href="/configuration/settings#audio-devices">
+    Select input and output audio sources
+  </Card>
+  <Card title="Hotkeys" icon="keyboard" href="/configuration/hotkeys">
+    Configure keyboard shortcuts for bookmarks and replay buffer
+  </Card>
+</CardGroup>
+
+### Storage
+
+Manage where recordings are saved and storage limits.
+
+See [Storage Settings](/configuration/storage) for detailed information.
+
+### Games
+
+Configure game detection and automatic event tracking.
+
+See [Game Integration](/configuration/game-integration) for supported games.
+
+### Preferences
+
+Customize the Segra interface and behavior:
+
+- **Theme**: Choose visual theme (Segra, Dark, Night)
+- **Run on Startup**: Launch Segra when Windows starts
+- **Sound Effects Volume**: Adjust notification sound levels (0.0-1.0)
+- **Show New Badge on Videos**: Highlight recently recorded content
+- **Show Game Background**: Display game artwork in UI
+- **Show Audio Waveform in Timeline**: Visualize audio in the editor
+
+### Advanced
+
+Access advanced configuration options:
+
+- **OBS Version Selection**: Choose specific OBS version or use automatic (latest stable)
+- **Beta Updates**: Opt into beta releases
+- **Display Capture Method**: Select between Auto, DXGI, or WGC
+- **Force Mono Input Sources**: Convert stereo mic input to mono
+- **Separate Audio Tracks**: Record audio sources to separate tracks (up to 6 tracks)
+- **Audio Output Mode**: Control which applications are recorded
+  - `All`: Record all system audio
+  - `GameOnly`: Record only game audio
+  - `GameAndDiscord`: Record game and Discord audio
+
+## Capture Mode
+
+Segra offers three recording modes:
+
+<Tabs>
+  <Tab title="Session">
+    Records continuously from game start to game end. Best for:
+    - Full match recordings
+    - Review and analysis
+    - Creating montages from entire sessions
+    
+    Files are saved automatically when the game closes.
+  </Tab>
+  <Tab title="Buffer">
+    Keeps the last N seconds in memory (replay buffer). Best for:
+    - Capturing unexpected moments
+    - Saving only the highlights
+    - Minimal disk space usage
+    
+    Press the "Save Replay Buffer" hotkey to save the buffer to disk.
+  </Tab>
+  <Tab title="Hybrid">
+    Combines both modes - records full sessions while maintaining a replay buffer. Best for:
+    - Maximum flexibility
+    - Not missing any content
+    - Quick highlight saving during live gameplay
+    
+    You get both the full session recording and the ability to save instant replays.
+  </Tab>
+</Tabs>
+
+### Replay Buffer Settings
+
+When using Buffer or Hybrid mode, configure:
+
+<ParamField path="replayBufferDuration" type="integer" default="30">
+  Duration in seconds to keep in memory (5-600 seconds)
+</ParamField>
+
+<ParamField path="replayBufferMaxSize" type="integer" default="1000">
+  Maximum buffer size in MB (100-5000 MB)
+</ParamField>
+
+<Note>
+Buffer settings cannot be changed while recording. Stop the current recording to adjust these values.
+</Note>
+
+## Audio Devices
+
+Segra supports multiple audio inputs and outputs simultaneously.
+
+### Selecting Devices
+
+1. **Input Devices** (Microphones): Click the dropdown and select one or more microphone sources
+2. **Output Devices** (Desktop Audio): Select which audio outputs to capture
+3. **Volume Control**: Adjust individual device volumes (0.0-1.0)
+
+### Default Device
+
+The "Default Device" option dynamically tracks your system's default audio device. If you change your default microphone or speakers in Windows, Segra will automatically use the new default.
+
+### Advanced Audio Options
+
+<ParamField path="forceMonoInputSources" type="boolean" default="false">
+  Force stereo microphone inputs to mono. Useful for USB mics that report as stereo but only use one channel.
+</ParamField>
+
+<ParamField path="enableSeparateAudioTracks" type="boolean" default="false">
+  Record each audio source to a separate track (up to 6 total). Enables per-source volume control during editing.
+</ParamField>
+
+<ParamField path="audioOutputMode" type="enum" default="All">
+  Control which applications are recorded:
+  - `All`: All system audio
+  - `GameOnly`: Only the detected game
+  - `GameAndDiscord`: Game + Discord (filters other apps)
+</ParamField>
+
+## Display Selection
+
+For multi-monitor setups:
+
+<ParamField path="selectedDisplay" type="object" default="null">
+  Choose which monitor to record:
+  - `Automatic`: Records the monitor where the game appears
+  - Specific display: Always record from selected monitor
+</ParamField>
+
+<ParamField path="displayCaptureMethod" type="enum" default="Auto">
+  Screen capture technology:
+  - `Auto`: Let Segra choose the best method
+  - `DXGI`: Desktop Duplication API (faster, older tech)
+  - `WGC`: Windows Graphics Capture (better compatibility)
+</ParamField>
+
+## Session Management
+
+<ParamField path="discardSessionsWithoutBookmarks" type="boolean" default="false">
+  Automatically delete session recordings that have no bookmarks. Useful for automatically cleaning up uneventful gameplay.
+</ParamField>
+
+## Settings JSON Structure
+
+Key settings properties:
+
+```json
+{
+  "contentFolder": "C:/Users/YourName/Videos/Segra",
+  "cacheFolder": "C:/Users/YourName/AppData/Roaming/Segra",
+  "theme": "segra",
+  "resolution": "1440p",
+  "frameRate": 60,
+  "encoder": "gpu",
+  "codec": { "friendlyName": "NVIDIA NVENC H.264", ... },
+  "recordingMode": "Hybrid",
+  "replayBufferDuration": 30,
+  "storageLimit": 100,
+  "inputDevices": [
+    { "id": "default", "name": "Default Device", "volume": 1.0 }
+  ],
+  "outputDevices": [
+    { "id": "default", "name": "Default Device", "volume": 1.0 }
+  ],
+  "keybindings": [
+    { "action": "CreateBookmark", "enabled": true, "keys": [119] },
+    { "action": "SaveReplayBuffer", "enabled": true, "keys": [121] }
+  ]
+}
+```
+
+## Best Practices
+
+<AccordionGroup>
+  <Accordion title="Performance Optimization">
+    - Use GPU encoder when available for better performance
+    - Select resolution at or below your monitor's native resolution
+    - For older systems, use 720p/30fps or Standard preset
+    - Close unnecessary applications before recording
+  </Accordion>
+  
+  <Accordion title="Quality vs File Size">
+    - VBR provides better quality-to-size ratio than CBR
+    - CRF/CQP offers best quality for archival recordings
+    - Lower CRF/CQ values = higher quality and larger files
+    - Standard preset balances quality and performance for most users
+  </Accordion>
+  
+  <Accordion title="Audio Configuration">
+    - Test audio levels before important recording sessions
+    - Use separate audio tracks if you plan to edit recordings
+    - Enable "GameOnly" mode to avoid capturing music/browser audio
+    - Adjust individual device volumes to balance game and voice
+  </Accordion>
+</AccordionGroup>

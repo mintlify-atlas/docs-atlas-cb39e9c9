@@ -1,0 +1,587 @@
+---
+title: Contributing
+description: How to contribute to Segra - development setup, guidelines, and workflow
+---
+
+Segra is an open-source project, and we welcome contributions from the community! Whether you're fixing bugs, adding features, or improving documentation, this guide will help you get started.
+
+## Before You Start
+
+<Info>
+  Segra is built with C#/.NET for the backend and React/TypeScript for the frontend. Familiarity with these technologies is helpful but not required for all contributions.
+</Info>
+
+### Ways to Contribute
+
+<CardGroup cols={2}>
+  <Card title="Report Bugs" icon="bug">
+    Found an issue? Report it on [GitHub Issues](https://github.com/Segergren/Segra/issues)
+  </Card>
+  <Card title="Suggest Features" icon="lightbulb">
+    Have an idea? Open a feature request on GitHub
+  </Card>
+  <Card title="Fix Issues" icon="code">
+    Browse open issues and submit pull requests
+  </Card>
+  <Card title="Improve Docs" icon="book">
+    Help us improve guides and documentation
+  </Card>
+</CardGroup>
+
+## Development Setup
+
+### Requirements
+
+<Tabs>
+  <Tab title="Required">
+    - **Windows 10** (build 17763 / 1809) or newer
+    - **.NET SDK 9.0.x** with Windows targeting
+    - **Git** for version control
+    - **Bun v1.1+** for frontend tooling and git hooks
+  </Tab>
+  
+  <Tab title="Optional">
+    - **Node.js 18+** (only if you want backend to auto-start frontend dev server)
+    - **Visual Studio 2022** (17.12+) for full IDE experience
+    - **VS Code + C# Dev Kit** as lightweight alternative
+  </Tab>
+</Tabs>
+
+### Repository Structure
+
+```
+Segra/
+├── Segra.sln              # Solution file
+├── Segra.csproj           # Main project file
+├── Backend/               # C# backend code
+│   ├── App/              # Application services
+│   ├── Core/             # Core models and types
+│   ├── Games/            # Game integrations
+│   ├── Media/            # Video/audio processing
+│   ├── Recorder/         # OBS integration
+│   ├── Services/         # Backend services
+│   └── Windows/          # Windows-specific code
+├── Frontend/              # React frontend
+│   ├── src/
+│   ├── package.json
+│   └── vite.config.ts
+└── .husky/               # Git hooks
+```
+
+### First-Time Setup
+
+<Steps>
+  <Step title="Clone the Repository">
+    ```bash
+    git clone https://github.com/Segergren/Segra.git
+    cd Segra
+    ```
+    
+    Or clone your fork if you're contributing:
+    ```bash
+    git clone https://github.com/YOUR_USERNAME/Segra.git
+    ```
+  </Step>
+  
+  <Step title="Install Root Dev Tools">
+    Install Husky and lint-staged for git hooks:
+    ```bash
+    bun install
+    bun run prepare
+    ```
+  </Step>
+  
+  <Step title="Install Frontend Dependencies">
+    ```bash
+    cd Frontend
+    bun install
+    cd ..
+    ```
+  </Step>
+  
+  <Step title="Verify .NET SDK">
+    Ensure .NET SDK 9 is installed:
+    ```bash
+    dotnet --info
+    ```
+    
+    Should show `Version: 9.x` and `OS: Windows`
+  </Step>
+</Steps>
+
+## Development Workflow
+
+### Running the Application
+
+Segra has two parts that run during development:
+
+<Tabs>
+  <Tab title="Start Frontend (Vite)">
+    The frontend dev server runs on `http://localhost:2882`:
+    
+    **Using Bun (recommended)**:
+    ```bash
+    cd Frontend
+    bun run dev
+    ```
+    
+    **Using Node/npm**:
+    ```bash
+    cd Frontend
+    npm run dev
+    ```
+  </Tab>
+  
+  <Tab title="Start Backend (.NET)">
+    From the repository root:
+    ```bash
+    dotnet run --project Segra.csproj
+    ```
+    
+    <Note>
+      In Debug mode, the backend expects the frontend on `http://localhost:2882`. If Node/npm is installed, it will automatically run `npm run dev` if nothing is listening on port 2882.
+    </Note>
+  </Tab>
+</Tabs>
+
+### Making Changes
+
+<Steps>
+  <Step title="Create a Branch">
+    ```bash
+    git checkout -b feature/your-feature-name
+    ```
+    
+    Branch naming conventions:
+    - `feature/` - New features
+    - `fix/` - Bug fixes
+    - `docs/` - Documentation changes
+    - `refactor/` - Code refactoring
+  </Step>
+  
+  <Step title="Make Your Changes">
+    Edit code in your preferred IDE:
+    - **Visual Studio 2022**: Open `Segra.sln`
+    - **VS Code**: Open folder, install C# Dev Kit extension
+    
+    Hot reload is supported for frontend (Vite) and backend (.NET 9).
+  </Step>
+  
+  <Step title="Test Your Changes">
+    - Manual testing: Run the application and verify functionality
+    - Check logs in `%AppData%/Segra/logs/` for errors
+    - Test on a clean Windows installation if possible
+  </Step>
+  
+  <Step title="Commit Your Changes">
+    Git hooks will automatically run:
+    - **Pre-commit**: Formats C# code with `dotnet format`, runs Prettier/ESLint on frontend
+    - **Pre-push**: Verifies no formatting drift in solution
+    
+    ```bash
+    git add .
+    git commit -m "feat: add new feature"
+    ```
+    
+    Commit message format:
+    - `feat:` - New feature
+    - `fix:` - Bug fix
+    - `docs:` - Documentation
+    - `refactor:` - Code refactoring
+    - `perf:` - Performance improvement
+    - `test:` - Test changes
+  </Step>
+</Steps>
+
+## Code Style and Formatting
+
+<Info>
+  Code formatting is enforced automatically via EditorConfig and git hooks.
+</Info>
+
+### EditorConfig Settings
+
+**Global (all files)**:
+- Line endings: CRLF
+- Indent: 2 spaces
+
+**C# files**:
+- Line endings: CRLF
+- Indent: 4 spaces
+
+### C# Formatting
+
+Formatting is handled by `dotnet format`:
+
+<Tabs>
+  <Tab title="Pre-commit (Automatic)">
+    Formats staged `*.cs` files automatically before commit
+  </Tab>
+  
+  <Tab title="Pre-push (Verification)">
+    Runs `dotnet format --verify-no-changes` on entire solution
+  </Tab>
+  
+  <Tab title="Manual Format">
+    ```bash
+    # Format entire solution
+    dotnet format
+    
+    # Format specific project
+    dotnet format Segra.csproj
+    ```
+  </Tab>
+</Tabs>
+
+### Frontend Formatting
+
+The frontend uses Prettier + ESLint with Bun:
+
+```bash
+cd Frontend
+
+# Check formatting
+bun run format:check
+
+# Auto-fix formatting
+bun run format
+
+# Check linting
+bun run lint
+
+# Auto-fix linting
+bun run lint:fix
+```
+
+## Building for Release
+
+### Backend Build
+
+```bash
+# Debug build
+dotnet build -c Debug
+
+# Release build
+dotnet build -c Release
+
+# Publish (self-contained)
+dotnet publish -c Release
+```
+
+### Frontend Build
+
+```bash
+cd Frontend
+bun run build
+```
+
+This creates optimized production files in `Frontend/dist/`.
+
+## Key Architecture Concepts
+
+### Backend Architecture
+
+<AccordionGroup>
+  <Accordion title="OBSService - Recording Engine">
+    Located in `Backend/Recorder/OBSService.cs`
+    
+    **Responsibilities**:
+    - OBS context initialization
+    - Scene and source management
+    - Encoder configuration
+    - Recording/replay buffer outputs
+    
+    **Key Methods**:
+    - `InitializeAsync()` - Initialize OBS
+    - `StartRecording()` - Start recording session
+    - `StopRecording()` - Stop and cleanup
+    - `SaveReplayBuffer()` - Save replay buffer
+  </Accordion>
+  
+  <Accordion title="GameDetectionService">
+    Located in `Backend/Services/GameDetectionService.cs`
+    
+    **Responsibilities**:
+    - Monitor Windows processes
+    - Detect game launches
+    - Auto-start recording
+    
+    Uses WMI event watchers for process monitoring.
+  </Accordion>
+  
+  <Accordion title="SettingsService">
+    Located in `Backend/Services/SettingsService.cs`
+    
+    **Responsibilities**:
+    - Load/save user settings
+    - Content folder management
+    - Display/audio device enumeration
+  </Accordion>
+  
+  <Accordion title="ContentService">
+    Located in `Backend/Media/ContentService.cs`
+    
+    **Responsibilities**:
+    - Metadata file creation
+    - Thumbnail generation
+    - Waveform generation
+    - Content library management
+  </Accordion>
+</AccordionGroup>
+
+### Frontend Architecture
+
+The frontend is built with:
+- **React 18** - UI framework
+- **TypeScript** - Type safety
+- **Vite** - Build tool and dev server
+- **Tailwind CSS** - Styling
+- **DaisyUI** - Component library
+
+Communication with backend uses:
+- WebSockets for real-time updates
+- IPC for Photino.NET integration
+
+## Common Development Tasks
+
+### Adding a New OBS Source Type
+
+<Steps>
+  <Step title="Add Source Creation">
+    In `OBSService.cs`, create the source:
+    ```csharp
+    var customSource = new Source("source_id", "Source Name");
+    customSource.Update(s => {
+        s.Set("property", value);
+    });
+    ```
+  </Step>
+  
+  <Step title="Add to Scene">
+    ```csharp
+    var sceneItem = _mainScene.AddSource(customSource);
+    ```
+  </Step>
+  
+  <Step title="Cleanup on Stop">
+    Add disposal in `DisposeSources()` method
+  </Step>
+</Steps>
+
+### Adding a New Game Integration
+
+<Steps>
+  <Step title="Create Integration Class">
+    Create new file in `Backend/Games/YourGame/YourGameIntegration.cs`:
+    ```csharp
+    public class YourGameIntegration : Integration
+    {
+        // Implementation
+    }
+    ```
+  </Step>
+  
+  <Step title="Implement Integration Logic">
+    Override methods from `Integration` base class for event detection
+  </Step>
+  
+  <Step title="Register in GameIntegrationService">
+    Add your integration to the service initialization
+  </Step>
+</Steps>
+
+### Adding a New Setting
+
+<Steps>
+  <Step title="Add Property to Settings Model">
+    In `Backend/Core/Models/Settings.cs`:
+    ```csharp
+    [JsonPropertyName("yourSetting")]
+    public bool YourSetting
+    {
+        get => _yourSetting;
+        set
+        {
+            _yourSetting = value;
+            SendToFrontend("YourSetting changed");
+        }
+    }
+    ```
+  </Step>
+  
+  <Step title="Add UI in Frontend">
+    Create settings component in `Frontend/src/components/Settings/`
+  </Step>
+  
+  <Step title="Wire Up Setting">
+    Connect frontend UI to backend setting via IPC
+  </Step>
+</Steps>
+
+## Debugging
+
+### Backend Debugging
+
+<Tabs>
+  <Tab title="Visual Studio">
+    1. Open `Segra.sln`
+    2. Set breakpoints in code
+    3. Press F5 to start debugging
+    4. Debugger attaches automatically
+  </Tab>
+  
+  <Tab title="VS Code">
+    1. Install C# Dev Kit extension
+    2. Open folder in VS Code
+    3. Set breakpoints
+    4. Press F5 (or use Debug panel)
+  </Tab>
+  
+  <Tab title="Logs">
+    Check application logs:
+    - Location: `%AppData%/Segra/logs/`
+    - Files rotate daily
+    - Use `Serilog` for logging:
+    ```csharp
+    Log.Information("Message");
+    Log.Warning("Warning message");
+    Log.Error("Error message");
+    ```
+  </Tab>
+</Tabs>
+
+### Frontend Debugging
+
+- **Browser DevTools**: Inspect elements, console, network
+- **React DevTools**: Install browser extension for component inspection
+- **Vite HMR**: Hot Module Replacement for instant feedback
+
+## Git Hooks
+
+Segra uses Husky + lint-staged for automated code quality:
+
+<Tabs>
+  <Tab title="Pre-commit">
+    Runs on `git commit`:
+    - Formats staged `*.cs` files with `dotnet format`
+    - Runs Prettier on frontend staged files
+    - Runs ESLint on frontend staged files
+  </Tab>
+  
+  <Tab title="Pre-push">
+    Runs on `git push`:
+    - Verifies no formatting drift: `dotnet format --verify-no-changes`
+    - Prevents pushing unformatted code
+  </Tab>
+</Tabs>
+
+<Note>
+  If hooks don't run, ensure Bun is on PATH in your Git shell:
+  ```bash
+  bun install
+  bun run prepare
+  ```
+</Note>
+
+## Pull Request Guidelines
+
+### Before Submitting
+
+<Steps>
+  <Step title="Keep PRs Focused">
+    - One feature or fix per PR
+    - Small, reviewable changes
+    - Avoid mixing refactoring with features
+  </Step>
+  
+  <Step title="Run Format and Lint">
+    ```bash
+    # Backend
+    dotnet format
+    
+    # Frontend
+    cd Frontend
+    bun run format
+    bun run lint:fix
+    ```
+  </Step>
+  
+  <Step title="Test Thoroughly">
+    - Test your changes manually
+    - Verify no regressions in existing features
+    - Include steps to reproduce in PR description
+  </Step>
+  
+  <Step title="Update Documentation">
+    If your change affects user-facing features, update docs
+  </Step>
+</Steps>
+
+### PR Description Template
+
+```markdown
+## Description
+Brief description of changes
+
+## Type of Change
+- [ ] Bug fix
+- [ ] New feature
+- [ ] Breaking change
+- [ ] Documentation update
+
+## Testing
+- How were these changes tested?
+- What edge cases were considered?
+
+## Screenshots (if applicable)
+Add screenshots for UI changes
+
+## Checklist
+- [ ] Code follows project style
+- [ ] Tests pass locally
+- [ ] Documentation updated
+- [ ] No console errors/warnings
+```
+
+## Community
+
+<CardGroup cols={2}>
+  <Card title="GitHub Discussions" icon="github" href="https://github.com/Segergren/Segra/discussions">
+    Ask questions and discuss ideas
+  </Card>
+  <Card title="Issues" icon="github" href="https://github.com/Segergren/Segra/issues">
+    Report bugs and request features
+  </Card>
+  <Card title="Discord" icon="discord">
+    Join the community chat
+  </Card>
+  <Card title="Twitter" icon="twitter">
+    Follow for updates
+  </Card>
+</CardGroup>
+
+## Code of Conduct
+
+Segra follows the [Contributor Covenant Code of Conduct](https://www.contributor-covenant.org/version/2/1/code_of_conduct/). Be respectful, inclusive, and collaborative.
+
+## License
+
+By contributing to Segra, you agree that your contributions will be licensed under the **GPLv2 License**.
+
+<Info>
+  Segra is licensed under GPLv2, which means:
+  - You can use, modify, and distribute the software
+  - Modifications must also be GPLv2
+  - Source code must be made available
+</Info>
+
+## Getting Help
+
+If you need help contributing:
+
+1. Check existing documentation and guides
+2. Search [GitHub Issues](https://github.com/Segergren/Segra/issues) for similar questions
+3. Ask in GitHub Discussions
+4. Join the Discord community
+
+Thank you for contributing to Segra!

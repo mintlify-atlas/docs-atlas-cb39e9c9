@@ -1,0 +1,412 @@
+---
+title: Uploads
+description: Share your clips, highlights, and replays online with Segra Cloud
+---
+
+Segra Cloud lets you upload your gaming clips and get shareable links to show off your best moments on social media, Discord, or with friends.
+
+## What is Segra Cloud?
+
+Segra Cloud is a video hosting service integrated into Segra:
+
+- **Upload from the app** - One-click uploads directly from any clip
+- **Shareable links** - Get a unique URL for each upload
+- **No file size limits** - Upload clips of any length (within reason)
+- **Fast processing** - Videos are optimized for web playback
+- **Privacy** - Only people with the link can view your clips
+
+<Info>
+Segra Cloud requires a free Segra account. Sign up in **Settings > Account**.
+</Info>
+
+## Uploading Clips
+
+### From the Segra App
+
+<Steps>
+  <Step title="Find a clip to upload">
+    Navigate to **Clips**, **Highlights**, or **Replay Buffer** and select a video.
+  </Step>
+  
+  <Step title="Click the upload icon">
+    Click the cloud upload icon on the video card.
+  </Step>
+  
+  <Step title="Add details">
+    Fill in the upload form:
+    - **Title** - Give your clip a catchy title
+    - **Description** - Optional description or context
+    - **Game** - Auto-detected from metadata
+  </Step>
+  
+  <Step title="Upload">
+    Click **Upload** and wait for the process to complete.
+  </Step>
+  
+  <Step title="Get shareable link">
+    Once uploaded, Segra provides a shareable URL like `https://segra.tv/v/abc123`
+  </Step>
+</Steps>
+
+### Upload Progress
+
+During upload, you'll see real-time progress:
+
+- **Uploading** - File is being sent to Segra servers
+- **Processing** - Video is being optimized for web playback
+- **Done** - Upload complete, link is ready
+
+<Tip>
+You can cancel an upload at any time by clicking the **Cancel** button on the upload progress card.
+</Tip>
+
+### Auto-Open in Browser
+
+Enable **Open in browser after upload** in **Settings > Clip Settings**:
+
+- Segra automatically opens the uploaded clip in your default browser
+- Useful for immediately sharing the link or previewing the upload
+- Can be toggled on/off per your preference
+
+## Managing Uploads
+
+### Tracking Uploaded Clips
+
+Uploaded clips show a **cloud badge** in the Segra app:
+
+- The badge indicates the clip has been uploaded
+- Click the clip to see the shareable link
+- Re-uploading creates a new link (old link remains active)
+
+### Upload History
+
+View your upload history at **segra.tv** (requires login):
+
+- See all your uploaded clips
+- View stats (views, shares, etc.)
+- Delete old uploads
+- Manage privacy settings
+
+<Note>
+The web dashboard is separate from the Segra desktop app. Log in with the same account credentials.
+</Note>
+
+## Upload Settings
+
+### Clip Metadata
+
+When uploading, Segra sends:
+
+- **Game name** - From the clip metadata
+- **Title** - Your custom title or default filename
+- **Description** - Optional description
+- **IGDB ID** - Game database ID for artwork/metadata
+
+This metadata is used to display your clip on the web:
+
+```json
+{
+  "game": "Counter-Strike 2",
+  "title": "Insane 1v5 Clutch",
+  "description": "Clutched a 1v5 on Inferno",
+  "igdbId": 12345
+}
+```
+
+### File Format
+
+Uploads are sent as-is (MP4 format):
+
+- No re-encoding during upload (fast)
+- Server-side processing optimizes for web playback
+- Original quality is preserved
+
+### Authentication
+
+Uploads require authentication:
+
+- Sign in via **Settings > Account**
+- Segra uses JWT tokens for secure uploads
+- Tokens are automatically refreshed when expired
+
+<Warning>
+If you're not signed in, the upload button will prompt you to log in first.
+</Warning>
+
+## Sharing Your Clips
+
+### Shareable Links
+
+Each upload gets a unique URL:
+
+```
+https://segra.tv/v/abc123def456
+```
+
+Share this link:
+
+- **Copy to clipboard** - Click the copy icon in the Segra app
+- **Social media** - Paste into Twitter, Discord, Reddit, etc.
+- **Direct messaging** - Send to friends via DMs
+
+### Embed Options
+
+Segra Cloud links can be embedded:
+
+- **Discord** - Automatic video preview and playback
+- **Twitter** - Video player card
+- **Reddit** - Expandable video player
+
+### Privacy
+
+Uploaded clips are:
+
+- **Unlisted** - Not publicly indexed or searchable
+- **Shareable** - Anyone with the link can view
+- **Permanent** - Links remain active until you delete them
+
+<Note>
+Segra doesn't currently support private or password-protected uploads. Don't upload sensitive content.
+</Note>
+
+## Upload Workflow
+
+Here's the complete upload process under the hood:
+
+### Client-Side (Segra App)
+
+1. **User clicks upload** on a clip
+2. Segra reads the video file into memory
+3. **Multipart form data** is created with file + metadata
+4. **Authentication token** is attached to the request
+5. **Upload starts** with progress tracking
+
+### Server-Side (Segra Cloud)
+
+1. **Receives upload** and validates authentication
+2. **Stores original file** in cloud storage (AWS S3 or similar)
+3. **Processes video** - creates web-optimized versions (HLS, MP4)
+4. **Generates thumbnail** - extracts preview image
+5. **Returns response** with shareable URL
+
+### Post-Upload
+
+1. Segra receives the URL from the server
+2. **Updates metadata** locally with `uploadId`
+3. **Shows cloud badge** on the clip card
+4. **Opens browser** if auto-open is enabled
+
+## Advanced Features
+
+### Upload ID Tracking
+
+Each uploaded clip gets an `uploadId` stored in metadata:
+
+```json
+{
+  "fileName": "2024-01-15_14-30-45",
+  "uploadId": "abc123def456",
+  "game": "Valorant"
+}
+```
+
+This allows Segra to:
+
+- Track which clips have been uploaded
+- Prevent duplicate uploads
+- Show cloud badges in the UI
+
+### Re-uploading
+
+If you upload the same clip again:
+
+- A **new upload** is created with a different URL
+- The old URL remains active
+- The `uploadId` in metadata is updated to the new upload
+
+### Canceling Uploads
+
+You can cancel an in-progress upload:
+
+1. Click **Cancel** on the upload progress card
+2. Segra immediately stops the HTTP request
+3. Partial uploads are discarded (not saved)
+4. The clip remains in your local library
+
+<Tip>
+If upload fails due to network issues, you can retry by clicking upload again.
+</Tip>
+
+## Bandwidth & Performance
+
+### Upload Speed
+
+Upload speed depends on:
+
+- **Your internet connection** - Upload bandwidth (check with speedtest)
+- **File size** - Larger clips take longer
+- **Server load** - Segra Cloud processing capacity
+
+Typical upload speeds:
+
+- **100 MB clip** on 10 Mbps upload: ~80 seconds
+- **500 MB clip** on 50 Mbps upload: ~80 seconds
+- **1 GB clip** on 100 Mbps upload: ~80 seconds
+
+### Reducing Upload Time
+
+To make uploads faster:
+
+- **Lower clip quality** in **Settings > Clip Settings**
+- **Shorten clips** - trim to only the essential moment
+- **Use H.264 instead of H.265** - smaller file sizes
+- **Upload during off-peak hours** - less server congestion
+
+### Progress Tracking
+
+Segra shows granular upload progress:
+
+```
+Uploading... 45%
+```
+
+Once upload reaches 100%, the status changes to:
+
+```
+Processing...
+```
+
+Processing typically takes 10-30 seconds depending on clip length.
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Upload fails immediately">
+    - Check your internet connection
+    - Verify you're signed in to Segra (**Settings > Account**)
+    - Ensure the clip file still exists on disk
+    - Check Segra logs for authentication errors
+  </Accordion>
+  
+  <Accordion title="Upload stuck at 99%">
+    - Server is processing the video (may take 1-2 minutes for large clips)
+    - Don't cancel - processing is almost complete
+    - If stuck for >5 minutes, cancel and retry
+  </Accordion>
+  
+  <Accordion title="Upload canceled unexpectedly">
+    - Network connection was interrupted
+    - Retry the upload
+    - Check firewall settings aren't blocking Segra
+  </Accordion>
+  
+  <Accordion title="Upload succeeds but no link appears">
+    - Refresh the Segra app
+    - Check the clip metadata file for the `uploadId`
+    - Look in your upload history at segra.tv
+  </Accordion>
+  
+  <Accordion title="Can't sign in">
+    - Create an account at segra.tv if you don't have one
+    - Check your email for verification link
+    - Reset password if you've forgotten it
+    - Contact support if login continues to fail
+  </Accordion>
+</AccordionGroup>
+
+## Limitations
+
+### File Size
+
+- **No hard limit** - but uploads >5 GB may timeout
+- Recommended max: **2 GB** per clip
+- Larger files take longer to process
+
+### File Format
+
+- Only **MP4 files** are supported
+- Segra clips are always MP4, so this shouldn't be an issue
+- Don't try to upload non-video files
+
+### Upload Quota
+
+Free accounts have:
+
+- **Unlimited uploads** (for now)
+- **No storage limits** (subject to change)
+
+Future plans may include:
+
+- Premium accounts with more storage
+- Analytics and detailed view statistics
+- Custom branding options
+
+## Privacy & Security
+
+### Data Handling
+
+When you upload:
+
+- Video is encrypted during transfer (HTTPS)
+- Stored securely in cloud storage
+- Only accessible via the unique URL
+- Not indexed by search engines
+
+### Content Policy
+
+Don't upload:
+
+- Copyrighted content you don't own
+- Illegal or harmful content
+- Spam or misleading content
+
+Violations may result in account suspension.
+
+### Deleting Uploads
+
+To delete an uploaded clip:
+
+1. Log in to **segra.tv**
+2. Go to your upload history
+3. Click **Delete** on the clip
+4. The link will stop working immediately
+
+<Warning>
+Deleting a clip from your local Segra library does **not** delete it from Segra Cloud. You must delete it from the web dashboard.
+</Warning>
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Keep clips short" icon="timer">
+    15-60 second clips upload faster and get more views on social media.
+  </Card>
+  
+  <Card title="Add good titles" icon="text">
+    Descriptive titles help viewers understand what they're about to watch.
+  </Card>
+  
+  <Card title="Check quality" icon="eye">
+    Preview clips before uploading to ensure quality meets your standards.
+  </Card>
+  
+  <Card title="Tag properly" icon="tag">
+    Include game name and context in the description for better discoverability.
+  </Card>
+</CardGroup>
+
+## Future Features
+
+Upcoming improvements to Segra Cloud:
+
+- **View analytics** - See how many times your clip was viewed
+- **Comments** - Let viewers comment on your clips
+- **Collections** - Group related clips together
+- **Custom thumbnails** - Upload your own preview image
+- **Direct social sharing** - Post to Twitter/Discord without leaving Segra
+
+## Related Features
+
+- [Clipping](/features/clipping) - Create clips to upload
+- [Highlights](/features/highlights) - Auto-generate highlight reels
+- [Replay Buffer](/features/replay-buffer) - Save instant replays

@@ -1,0 +1,334 @@
+---
+title: Game Integration
+description: Automatic event detection and bookmarking for supported games in Segra
+---
+
+Segra includes built-in integrations for popular competitive games. When enabled, these integrations automatically detect and bookmark in-game events like kills, deaths, goals, and assists.
+
+## Supported Games
+
+Segra currently supports automatic event tracking for:
+
+<CardGroup cols={2}>
+  <Card title="Counter-Strike 2" icon="crosshairs">
+    **Tracked Events**: Kills, Deaths
+    
+    Requires CS2's Game State Integration (GSI) configuration file
+  </Card>
+  
+  <Card title="League of Legends" icon="shield">
+    **Tracked Events**: Kills, Assists, Deaths
+    
+    Uses LoL's live client data API (port 2999)
+  </Card>
+  
+  <Card title="PUBG: Battlegrounds" icon="gun">
+    **Tracked Events**: Kills, Knocks, Deaths
+    
+    Requires PUBG Developer API access
+  </Card>
+  
+  <Card title="Rocket League" icon="car">
+    **Tracked Events**: Goals, Assists
+    
+    Uses Rocket League's plugin system
+  </Card>
+</CardGroup>
+
+## Enabling Game Integrations
+
+### From Settings UI
+
+1. Navigate to **Settings** > **Games**
+2. Find the **Game Integrations** section
+3. Toggle the switch for each game you want to enable
+4. Integration activates automatically when you launch the game
+
+<Note>
+Game integrations cannot be enabled or disabled while recording is in progress.
+</Note>
+
+### Configuration
+
+<ParamField path="gameIntegrations.counterStrike2.enabled" type="boolean" default="true">
+  Enable automatic event detection for Counter-Strike 2
+</ParamField>
+
+<ParamField path="gameIntegrations.leagueOfLegends.enabled" type="boolean" default="true">
+  Enable automatic event detection for League of Legends
+</ParamField>
+
+<ParamField path="gameIntegrations.pubg.enabled" type="boolean" default="true">
+  Enable automatic event detection for PUBG: Battlegrounds
+</ParamField>
+
+<ParamField path="gameIntegrations.rocketLeague.enabled" type="boolean" default="true">
+  Enable automatic event detection for Rocket League
+</ParamField>
+
+## How It Works
+
+When a game integration is enabled:
+
+<Steps>
+  <Step title="Game Detection">
+    Segra detects when you launch a supported game
+  </Step>
+  <Step title="Integration Start">
+    The integration service starts and connects to the game's data API
+  </Step>
+  <Step title="Event Monitoring">
+    The integration continuously monitors for in-game events
+  </Step>
+  <Step title="Automatic Bookmarking">
+    When an event occurs (kill, death, goal, etc.), Segra creates a bookmark automatically
+  </Step>
+  <Step title="Timeline Updates">
+    Bookmarks appear in the recording timeline with event labels
+  </Step>
+</Steps>
+
+## Game-Specific Setup
+
+### Counter-Strike 2
+
+CS2 integration requires a Game State Integration configuration file.
+
+<Accordion title="Setup Instructions">
+  Segra automatically creates the required GSI configuration file when:
+  1. CS2 is detected for the first time
+  2. The integration is enabled in settings
+  
+  **Manual setup** (if needed):
+  
+  1. Navigate to your CS2 config folder:
+     ```
+     C:\Program Files (x86)\Steam\steamapps\common\Counter-Strike Global Offensive\game\csgo\cfg\gamestate_integration
+     ```
+  
+  2. Create a file named `gamestate_integration_segra.cfg` with:
+     ```json
+     "Segra GSI Configuration"
+     {
+       "uri" "http://127.0.0.1:1340/"
+       "timeout" "5.0"
+       "buffer"  "0.1"
+       "throttle" "0.5"
+       "heartbeat" "30.0"
+       "data"
+       {
+         "provider"      "1"
+         "map"           "1"
+         "round"         "1"
+         "player_id"     "1"
+         "player_state"  "1"
+         "player_match_stats" "1"
+       }
+     }
+     ```
+  
+  3. Restart CS2
+  4. Segra will now receive kill/death events
+</Accordion>
+
+**Tracked Events**:
+- **Kills**: Bookmark created each time you eliminate an opponent
+- **Deaths**: Bookmark created when you die
+
+### League of Legends
+
+League integration uses the LoL Live Client Data API (no additional setup required).
+
+<Accordion title="How It Works">
+  - LoL exposes game data on `https://127.0.0.1:2999/liveclientdata`
+  - Segra polls this endpoint every 250ms during games
+  - Events are detected by comparing player stats between polls
+  - Works for all game modes (Summoner's Rift, ARAM, etc.)
+</Accordion>
+
+**Tracked Events**:
+- **Kills**: Bookmark when your kill count increases
+- **Assists**: Bookmark when you get an assist
+- **Deaths**: Bookmark when you die
+
+### PUBG: Battlegrounds
+
+PUBG integration requires API access.
+
+<Accordion title="Setup Instructions">
+  The PUBG integration uses the official PUBG Developer API.
+  
+  <Warning>
+  PUBG API access may require registration and has rate limits. Check PUBG's developer portal for current requirements.
+  </Warning>
+  
+  Events are tracked through the API's telemetry system.
+</Accordion>
+
+**Tracked Events**:
+- **Kills**: Bookmark when you eliminate a player
+- **Knocks**: Bookmark when you knock down an opponent
+- **Deaths**: Bookmark when you're eliminated
+
+### Rocket League
+
+Rocket League integration uses the game's plugin system.
+
+<Accordion title="How It Works">
+  - Rocket League supports BakkesMod and similar plugins
+  - Segra integrates with the game's event system
+  - Real-time tracking of goals and assists
+  - Works in all game modes
+</Accordion>
+
+**Tracked Events**:
+- **Goals**: Bookmark when you or your team scores
+- **Assists**: Bookmark when you assist a goal
+
+## Bookmark Display
+
+Game integration bookmarks appear with color-coded badges:
+
+<Tabs>
+  <Tab title="Success Events">
+    **Green badges** for positive events:
+    - Kills
+    - Knocks
+    - Assists
+    - Goals
+  </Tab>
+  
+  <Tab title="Death Events">
+    **Red badges** for deaths:
+    - Deaths (all games)
+  </Tab>
+</Tabs>
+
+In the timeline and clip editor, you'll see these bookmarks labeled with the event type (e.g., "Kill", "Death", "Goal").
+
+## Game Detection Settings
+
+Segra can automatically detect games or use manual whitelist/blacklist configuration.
+
+### Whitelist
+
+Games in the whitelist will **always** be recorded when launched.
+
+<ParamField path="whitelist" type="array" default="[]">
+  Array of game objects to always record:
+  ```json
+  [
+    {
+      "name": "Counter-Strike 2",
+      "paths": ["C:/Program Files/Steam/steamapps/common/Counter-Strike Global Offensive/game/bin/win64/cs2.exe"]
+    }
+  ]
+  ```
+</ParamField>
+
+### Blacklist
+
+Games in the blacklist will **never** be recorded.
+
+<ParamField path="blacklist" type="array" default="[]">
+  Array of game objects to exclude from recording:
+  ```json
+  [
+    {
+      "name": "Example Game",
+      "paths": ["C:/Games/example.exe"]
+    }
+  ]
+  ```
+</ParamField>
+
+### Adding Games to Lists
+
+1. Navigate to **Settings** > **Games** > **Game Detection**
+2. Click **Add to Whitelist** or **Add to Blacklist**
+3. Browse to the game's executable
+4. The game will be added to the appropriate list
+
+## Settings JSON Structure
+
+```json
+{
+  "gameIntegrations": {
+    "counterStrike2": {
+      "enabled": true
+    },
+    "leagueOfLegends": {
+      "enabled": true
+    },
+    "pubg": {
+      "enabled": true
+    },
+    "rocketLeague": {
+      "enabled": true
+    }
+  },
+  "whitelist": [],
+  "blacklist": []
+}
+```
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Events not being detected">
+    **Counter-Strike 2**:
+    - Verify the GSI config file exists and is correctly formatted
+    - Check that Segra is listening on port 1340 (not blocked by firewall)
+    - Restart CS2 after adding the config file
+    
+    **League of Legends**:
+    - Ensure you're in an active game (not lobby/champion select)
+    - Check that port 2999 is not blocked
+    - Verify LoL client is running (integration needs the client)
+    
+    **PUBG**:
+    - Confirm API access is properly configured
+    - Check API rate limits haven't been exceeded
+    
+    **Rocket League**:
+    - Verify plugin system is enabled
+    - Check for conflicts with other Rocket League mods
+  </Accordion>
+  
+  <Accordion title="Too many bookmarks">
+    If you're getting too many automatic bookmarks:
+    - Disable integrations for games you don't want tracked
+    - Use the whitelist/blacklist to control which games are recorded
+    - Manually delete unwanted bookmarks after recording
+  </Accordion>
+  
+  <Accordion title="Integration not starting">
+    - Ensure the integration is enabled in Settings > Games
+    - Check that Segra service is running (system tray icon present)
+    - Verify the game is properly detected (check Segra's game detection)
+    - Restart Segra and try launching the game again
+  </Accordion>
+</AccordionGroup>
+
+## Performance Impact
+
+Game integrations are designed to have minimal performance impact:
+
+- **Counter-Strike 2**: Uses event-driven GSI (no polling)
+- **League of Legends**: Polls every 250ms (negligible CPU usage)
+- **PUBG**: API calls are rate-limited and efficient
+- **Rocket League**: Native plugin integration (very low overhead)
+
+<Tip>
+If you experience any performance issues, you can disable integrations for specific games while keeping others enabled.
+</Tip>
+
+## Future Games
+
+Segra is actively adding support for more games. Request integration support by:
+
+- Opening a GitHub issue
+- Joining the Segra Discord community
+- Contacting support at [segra.tv](https://segra.tv)
+
+Games with public APIs or telemetry systems are easiest to integrate.

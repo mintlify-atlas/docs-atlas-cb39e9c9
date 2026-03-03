@@ -1,0 +1,284 @@
+---
+title: Recording
+description: Learn how Segra's recording modes work and how to capture your gameplay
+---
+
+Segra offers three powerful recording modes to match your workflow: Full Session, Replay Buffer, and Hybrid. Each mode is optimized for different use cases.
+
+## Recording Modes
+
+You can select your recording mode in **Settings > Capture Mode**. The mode cannot be changed while a recording is active.
+
+### Hybrid Mode (Recommended)
+
+<Info>
+Hybrid mode is the default and recommended setting for most users. It combines the best of both worlds.
+</Info>
+
+Hybrid mode records your full gaming session while simultaneously maintaining a replay buffer. This means you can:
+
+- **Save instant replays** with a hotkey (default: F10) without interrupting your session
+- **Access full game integration** features for supported games
+- **Create AI-generated highlights** from your full session
+- **Add manual bookmarks** during gameplay (default: F8)
+- **Review the complete session** after your game ends
+
+**Use Hybrid when:** You want the flexibility to save both short highlight moments and review your full session later.
+
+### Session Recording
+
+Session mode records your entire gaming session from the moment you launch a game until you close it.
+
+**Features:**
+- Full session video files saved automatically
+- Game integration support (Counter-Strike 2, League of Legends, PUBG, Rocket League)
+- AI-powered highlight detection
+- Bookmark system with manual and automatic markers
+- Complete timeline for review and clipping
+
+**Storage:** Uses more storage space since entire sessions are saved. You can manage this in **Settings > Storage**.
+
+**Use Session when:** You're a content creator who needs complete gameplay recordings for editing or review.
+
+### Replay Buffer
+
+Replay Buffer continuously records gameplay in the background but only saves clips when you press a hotkey.
+
+**How it works:**
+- Segra records a rolling buffer (default: 30 seconds)
+- Press the save hotkey (F10) to save the last 30 seconds
+- Only saved clips are written to disk
+- The buffer resets after each save
+
+**Features:**
+- Minimal storage footprint - only saves what you want
+- Perfect for capturing highlight moments
+- Quick saves without interrupting gameplay
+
+**Limitations:**
+- No game integration features
+- No automatic bookmarks
+- No AI highlight generation
+- Cannot review full sessions
+
+**Use Replay Buffer when:** You only want to save specific moments and don't need full session recordings.
+
+## How Recording Works
+
+### Automatic Game Detection
+
+Segra automatically detects when you launch a supported game:
+
+1. **Game Detection Service** monitors running processes
+2. When a whitelisted game launches, Segra enters **Pre-Recording** state
+3. The game window is verified and capture hooks are prepared
+4. Recording starts automatically using **Game Capture** technology
+
+<Tip>
+You can customize which games trigger automatic recording in **Settings > Game Detection**. Add games to the whitelist or blacklist as needed.
+</Tip>
+
+### Capture Methods
+
+Segra uses two capture methods:
+
+#### Game Capture (Primary)
+
+Game Capture hooks directly into your game for optimal performance:
+
+- **Zero performance impact** - runs at native game FPS
+- **Only captures the game** - overlays and desktop are excluded
+- **Automatic window tracking** - follows the game even if you alt-tab
+
+<Note>
+If game capture fails to hook within 90 seconds, Segra automatically falls back to Display Capture.
+</Note>
+
+#### Display Capture (Fallback)
+
+Display Capture records your entire monitor:
+
+- **Works with all games** including anti-cheat protected titles
+- **Captures overlays** like Discord, browser tabs, etc.
+- **Configurable capture method** - choose between DXGI and Windows Graphics Capture in **Settings > Advanced**
+
+### Manual Recording
+
+You can also start recordings manually from the home screen:
+
+<Steps>
+  <Step title="Click the Record button">
+    Click the record button in the Segra interface.
+  </Step>
+  <Step title="Segra starts recording">
+    Segra will use Display Capture to record your selected monitor.
+  </Step>
+  <Step title="Click Stop when done">
+    Click the stop button to end the recording and save the file.
+  </Step>
+</Steps>
+
+Manual recordings always use Display Capture and are saved as Session recordings (unless you're in Buffer mode).
+
+## Video Quality Settings
+
+Configure your recording quality in **Settings > Video**:
+
+### Resolution
+
+- **4K** (3840x2160)
+- **1440p** (2560x1440)
+- **1080p** (1920x1080)
+- **720p** (1280x720)
+
+Segra automatically detects your monitor resolution and suggests an optimal setting.
+
+### Frame Rate
+
+- 30 FPS
+- 60 FPS (default)
+- 120 FPS
+- 144 FPS
+- 240 FPS
+
+### Encoder
+
+Choose between **GPU** (hardware-accelerated) or **CPU** (software) encoding:
+
+**GPU Encoding** (Recommended):
+- NVIDIA NVENC (H.264/H.265/AV1)
+- AMD AMF (H.264/H.265/AV1)
+- Intel QuickSync (H.264/H.265/AV1)
+
+**CPU Encoding:**
+- x264 (H.264)
+- x265 (H.265)
+
+<Tip>
+GPU encoding provides better performance with minimal impact on game FPS. Segra automatically detects your GPU and selects the best encoder.
+</Tip>
+
+### Rate Control
+
+Segra supports multiple rate control methods:
+
+- **VBR** (Variable Bitrate) - Recommended. Balances quality and file size
+- **CBR** (Constant Bitrate) - Consistent file size, good for streaming workflows
+- **CQP** (Constant Quantization Parameter) - Hardware encoder constant quality mode
+- **CRF** (Constant Rate Factor) - Software encoder constant quality mode
+
+## Audio Recording
+
+### Audio Sources
+
+Configure audio in **Settings > Audio Devices**:
+
+- **Microphone** - Add multiple input devices with individual volume controls
+- **Desktop Audio** - System sounds and application audio
+- **Game Audio** - Isolated game audio (requires game capture hook)
+- **Discord** - Separate Discord audio track (Hybrid/Session modes only)
+
+### Separate Audio Tracks
+
+<Tip>
+Enable **Separate Audio Tracks** in **Settings > Audio** to record each audio source on its own track. Perfect for editing in DaVinci Resolve, Adobe Premiere, or other NLEs.
+</Tip>
+
+When enabled, Segra creates:
+- **Track 1:** Full Mix (all audio sources combined)
+- **Track 2-6:** Individual audio sources (microphone, desktop, game, Discord)
+
+This allows you to adjust or remove specific audio sources during editing without affecting others.
+
+### Audio Output Modes
+
+Choose how desktop audio is captured:
+
+- **All** - Records all system audio
+- **Game Only** - Only captures the hooked game's audio (requires game capture)
+- **Game + Discord** - Captures game and Discord on separate tracks
+
+## Storage Management
+
+Segra automatically manages your storage:
+
+- Set a **storage limit** in **Settings > Storage**
+- Oldest content is automatically deleted when the limit is reached
+- Session recordings are organized by game name
+- Buffers and clips are stored in separate folders
+
+<Warning>
+If you enable **Discard sessions without bookmarks**, Segra will automatically delete session recordings that have no manual bookmarks when the recording stops. This helps save storage for games where you didn't capture anything interesting.
+</Warning>
+
+## File Organization
+
+Recordings are automatically organized in your content folder:
+
+```
+Segra/
+├── Sessions/
+│   ├── Counter-Strike 2/
+│   ├── League of Legends/
+│   └── Valorant/
+├── Buffers/
+│   └── [Game Name]/
+├── Clips/
+│   └── [Game Name]/
+└── Highlights/
+    └── [Game Name]/
+```
+
+Each recording includes:
+- **Video file** (.mp4)
+- **Metadata** (game name, bookmarks, duration)
+- **Thumbnail** (auto-generated from first frame)
+- **Waveform** (audio visualization for timeline)
+
+## Keybindings
+
+Default keybindings for recording:
+
+- **F8** - Create bookmark (Session/Hybrid modes)
+- **F10** - Save replay buffer (Buffer/Hybrid modes)
+
+Customize these in **Settings > Keybindings**.
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Recording won't start">
+    - Check if the game is in your whitelist (**Settings > Game Detection**)
+    - Verify the game isn't in the blacklist
+    - Try starting a manual recording to test your capture setup
+    - Check the logs for errors related to game detection
+  </Accordion>
+  
+  <Accordion title="Game capture not hooking">
+    - Some games with anti-cheat may block game capture
+    - Segra will automatically fall back to Display Capture after 90 seconds
+    - You can manually select Display Capture in **Settings > Advanced**
+    - Ensure the game is running in fullscreen or borderless windowed mode
+  </Accordion>
+  
+  <Accordion title="Poor recording performance">
+    - Switch to GPU encoding if using CPU (**Settings > Video**)
+    - Lower your recording resolution or frame rate
+    - Increase the bitrate if quality is poor
+    - Close other heavy applications while recording
+  </Accordion>
+  
+  <Accordion title="Audio not recording">
+    - Check that your audio devices are selected in **Settings > Audio Devices**
+    - Verify volume levels aren't set to 0
+    - Test with a manual recording to isolate the issue
+    - Try switching between "All" and "Game Only" audio modes
+  </Accordion>
+</AccordionGroup>
+
+## Related Features
+
+- [Clipping](/features/clipping) - Create custom clips from your recordings
+- [Highlights](/features/highlights) - Generate automatic highlight reels
+- [Replay Buffer](/features/replay-buffer) - Save instant replays with a hotkey
+- [Uploads](/features/uploads) - Share your clips online

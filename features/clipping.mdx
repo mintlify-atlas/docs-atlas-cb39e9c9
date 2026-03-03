@@ -1,0 +1,326 @@
+---
+title: Clipping
+description: Create custom clips from your recordings with Segra's powerful clipping tools
+---
+
+Segra's clipping system lets you extract specific moments from your full session recordings and combine them into polished clips ready to share.
+
+## How Clipping Works
+
+The clipping workflow is simple and intuitive:
+
+<Steps>
+  <Step title="Open a session recording">
+    Navigate to **Sessions** and click on any recorded session to open the video player.
+  </Step>
+  
+  <Step title="Create selections">
+    Drag on the timeline to create selection ranges. You can create multiple selections from the same video or even combine selections from different videos.
+  </Step>
+  
+  <Step title="Review your selections">
+    Selected clips appear in the bottom panel. You can preview, adjust, or delete any selection.
+  </Step>
+  
+  <Step title="Create clip">
+    Click **Create Clip** to process your selections into a final video file.
+  </Step>
+</Steps>
+
+## Timeline Selection
+
+The video timeline provides precise frame-accurate selection:
+
+### Creating Selections
+
+1. **Click and drag** on the timeline to create a selection range
+2. **Drag the handles** on either end to adjust the start/end points
+3. **Click in the middle** of a selection to reposition your entire selection
+4. **Use the scrubber** to navigate and find exact moments
+
+<Tip>
+Bookmarks and game events (kills, deaths, goals) appear as markers on the timeline, making it easy to find important moments.
+</Tip>
+
+### Multi-Selection
+
+You can create multiple selections from a single video:
+
+- Selections are automatically numbered and listed in the selection panel
+- Each selection can be previewed independently
+- Selections are combined in chronological order when creating the clip
+- Remove unwanted selections by clicking the delete icon
+
+### Cross-Video Selection
+
+Segra allows you to combine clips from multiple videos:
+
+1. Create selections from one video
+2. Navigate to a different video (from any session or game)
+3. Create additional selections
+4. All selections are preserved and can be combined into one clip
+
+<Note>
+When combining clips from multiple games, the final clip is saved in a folder named after the first selection's game.
+</Note>
+
+## Clip Processing
+
+### Quality Settings
+
+Configure clip encoding in **Settings > Clip Settings**:
+
+#### Encoder
+
+- **GPU** (Recommended) - Hardware-accelerated encoding
+  - NVIDIA: h264_nvenc, hevc_nvenc, av1_nvenc
+  - AMD: h264_amf, hevc_amf, av1_amf
+  - Intel: h264_qsv, hevc_qsv, av1_qsv
+- **CPU** - Software encoding (libx264, libx265)
+
+#### Codec
+
+- **H.264** - Best compatibility, smaller file sizes
+- **H.265** - Better compression, newer codec
+- **AV1** - Cutting-edge compression (GPU-dependent)
+
+#### Quality
+
+**GPU Quality** (0-51, lower = better):
+- High: 18-23
+- Standard: 23-28
+- Low: 28-35
+
+**CPU Quality (CRF)** (0-51, lower = better):
+- High: 17-20
+- Standard: 20-23
+- Low: 23-28
+
+#### Preset
+
+**GPU Presets:**
+- NVIDIA: p1 (fastest) to p7 (slowest, best quality)
+- AMD: quality, balanced, speed
+- Intel: veryfast, fast, medium, slow
+
+**CPU Presets:**
+- ultrafast, superfast, veryfast, faster, fast, medium, slow, slower, veryslow
+
+<Tip>
+For quick social media clips, use **GPU + H.264 + Standard** quality with a **fast** preset. This produces small files quickly.
+</Tip>
+
+#### Frame Rate
+
+- **Original** - Preserves the source video's frame rate
+- **30 FPS** - Good for casual content
+- **60 FPS** - Smooth motion, recommended for gameplay
+- **120+ FPS** - For high frame rate displays
+
+#### Audio Quality
+
+- 96k - Low quality, small files
+- 128k - Standard quality (recommended)
+- 192k - High quality
+- 256k - Maximum quality
+
+### Progress Tracking
+
+During clip creation, Segra displays real-time progress:
+
+- **Extracting clips** - Individual segments are extracted (using your quality settings)
+- **Combining clips** - Multiple segments are concatenated into the final video
+- **Creating metadata** - Thumbnail and waveform are generated
+- **Processing** - Final optimizations are applied
+
+The progress bar shows the percentage complete. Large clips or multiple selections may take several minutes depending on your settings.
+
+### Cancel Clip Creation
+
+You can cancel an in-progress clip creation:
+
+- Click the **Cancel** button on the progress card
+- Segra immediately stops FFmpeg processing
+- Temporary files are automatically cleaned up
+- Your selections are preserved so you can try again
+
+## Selection Management
+
+### Selection Panel
+
+The bottom panel displays all active selections:
+
+- **Thumbnail** - Preview frame from the selection
+- **Title** - Game name and timestamp
+- **Duration** - Length of the selection
+- **Order** - Selections are numbered and combined in this order
+
+### Editing Selections
+
+- **Click a selection** to jump to that timestamp in the video
+- **Drag the timeline handles** to adjust the selection range
+- **Delete** using the trash icon on each selection card
+
+### Clear Selections
+
+After creating a clip:
+
+- **Auto-clear** - Enable in **Settings > Clip Settings** to automatically clear selections after successful clip creation
+- **Manual clear** - Click **Clear Selections** to remove all active selections
+
+## Clip Output
+
+Created clips are automatically organized:
+
+```
+Segra/
+└── Clips/
+    ├── Counter-Strike 2/
+    │   └── 2024-01-15_14-30-45.mp4
+    ├── League of Legends/
+    │   └── 2024-01-15_15-22-10.mp4
+    └── Valorant/
+        └── 2024-01-16_18-45-33.mp4
+```
+
+Each clip includes:
+
+- **Video file** - Your encoded clip in MP4 format
+- **Metadata** - Game, title, duration, creation date
+- **Thumbnail** - Auto-generated preview image
+- **Waveform** - Audio visualization for the timeline
+
+### Clip Metadata
+
+Clips inherit metadata from the source video:
+
+- **Game name** - From the first selection
+- **Custom title** - You can rename clips after creation
+- **IGDB integration** - Game artwork and metadata (if available)
+- **Creation date** - Timestamp of clip creation
+
+## Advanced Features
+
+### Fast Stream Copy
+
+When creating clips at the same quality as the source:
+
+- Segra can use **stream copy** mode for instant extraction
+- No re-encoding required - preserves original quality
+- Significantly faster processing (seconds instead of minutes)
+- Only works when the source and output settings match exactly
+
+<Note>
+Stream copy is automatically used when possible. You don't need to configure anything.
+</Note>
+
+### Multiple Output Tracks
+
+If your source recording has separate audio tracks:
+
+- Clips preserve all audio tracks from the source
+- You can edit tracks individually in video editing software
+- Track names are preserved (Microphone, Game Audio, Discord, etc.)
+
+### Clip from Highlights
+
+You can also create clips from auto-generated highlights:
+
+1. Open a highlight video
+2. Make selections as normal
+3. Create a custom clip with only your favorite moments
+
+This is useful for creating short 15-30 second clips from a longer highlight reel.
+
+## Sharing Clips
+
+Once your clip is ready, you have several sharing options:
+
+### Upload to Segra Cloud
+
+<Steps>
+  <Step title="Click the upload icon">
+    On any clip card, click the cloud upload icon.
+  </Step>
+  
+  <Step title="Add details">
+    Enter a title and description (optional).
+  </Step>
+  
+  <Step title="Upload">
+    Segra uploads your clip and provides a shareable link.
+  </Step>
+</Steps>
+
+See the [Uploads](/features/uploads) page for more details on sharing.
+
+### Export Locally
+
+Clips are standard MP4 files. You can:
+
+- Right-click a clip and select **Show in folder**
+- Copy the file to upload to YouTube, Twitter, TikTok, etc.
+- Import into video editing software like Adobe Premiere or DaVinci Resolve
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Clip creation is slow">
+    - Switch to **GPU encoding** in **Settings > Clip Settings**
+    - Use a **faster preset** (quality may be slightly lower)
+    - Reduce output **frame rate** to 30 or 60 FPS
+    - Close other applications to free up system resources
+  </Accordion>
+  
+  <Accordion title="Clip quality is poor">
+    - Lower the **quality value** (lower numbers = better quality)
+    - Switch to **H.265** codec for better compression
+    - Increase **audio quality** to 192k or 256k
+    - Use a **slower preset** for better encoding quality
+  </Accordion>
+  
+  <Accordion title="Clip has no audio">
+    - Check the source video has audio (play it in the video player)
+    - Verify **audio quality** isn't set too low
+    - Try creating a clip with CPU encoding instead of GPU
+    - Ensure your audio devices were properly recorded in the session
+  </Accordion>
+  
+  <Accordion title="Can't select on timeline">
+    - Make sure the video is fully loaded
+    - Check that you're clicking in the timeline area, not on bookmarks
+    - Try refreshing the page if the timeline is unresponsive
+  </Accordion>
+  
+  <Accordion title="Selections disappear">
+    - Selections are cleared when you navigate away from the video page
+    - Enable **Auto-clear selections** in settings if this is the desired behavior
+    - Selections are also cleared after successful clip creation (if auto-clear is enabled)
+  </Accordion>
+</AccordionGroup>
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Keep it short" icon="timer">
+    Shorter clips (15-60 seconds) are more engaging for social media and easier to share.
+  </Card>
+  
+  <Card title="Use bookmarks" icon="bookmark">
+    Add manual bookmarks during gameplay (F8) to mark important moments for clipping later.
+  </Card>
+  
+  <Card title="Quality presets" icon="sliders">
+    Start with **Standard** quality settings. Only increase quality if needed - file sizes grow quickly.
+  </Card>
+  
+  <Card title="Combine smartly" icon="layer-group">
+    When combining clips from multiple games, group similar content together for better flow.
+  </Card>
+</CardGroup>
+
+## Related Features
+
+- [Recording](/features/recording) - Capture your gameplay sessions
+- [Highlights](/features/highlights) - Auto-generate highlight reels
+- [Uploads](/features/uploads) - Share clips online

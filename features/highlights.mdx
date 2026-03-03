@@ -1,0 +1,350 @@
+---
+title: Highlights
+description: Automatically generate highlight reels from your session recordings with AI
+---
+
+Segra can automatically create highlight reels from your full session recordings by detecting important moments like kills, deaths, goals, and other game events.
+
+## How Highlights Work
+
+Highlights are created from **bookmarks** in your session recordings:
+
+<Steps>
+  <Step title="Record a session">
+    Highlights only work with **Session** or **Hybrid** recording modes. Replay Buffer mode doesn't support highlights.
+  </Step>
+  
+  <Step title="Bookmarks are created">
+    During gameplay, Segra automatically creates bookmarks for important events (kills, goals, assists) using game integrations or AI analysis.
+  </Step>
+  
+  <Step title="Generate highlight">
+    After the session, click **Create Highlight** to generate a compilation of your best moments.
+  </Step>
+  
+  <Step title="Review and share">
+    The highlight reel is saved to the Highlights section, ready to watch or share.
+  </Step>
+</Steps>
+
+## Bookmark Types
+
+Segra creates different types of bookmarks during gameplay:
+
+### Manual Bookmarks
+
+**Press F8** during gameplay to create a manual bookmark at the current moment.
+
+- Useful for marking clutch plays, funny moments, or anything you want to remember
+- Manual bookmarks are **included in highlights** by default
+- You can change the keybinding in **Settings > Keybindings**
+
+### Automatic Bookmarks
+
+Segra automatically creates bookmarks for game events:
+
+#### Kill
+
+When you eliminate an opponent:
+
+- **Included in highlights** by default
+- Works with Counter-Strike 2, PUBG, Rocket League
+- AI can also detect kills in unsupported games
+
+#### Death
+
+When you are eliminated:
+
+- **Not included in highlights** (usually not a highlight-worthy moment)
+- Still visible on the timeline for review
+- Useful for analyzing mistakes
+
+#### Goal
+
+When you score (Rocket League):
+
+- **Included in highlights**
+- Auto-detected via game integration
+
+#### Assist
+
+When you assist a teammate:
+
+- **Not included in highlights** by default
+- Tracked for statistics and review
+
+<Info>
+You can see which bookmark types are included in highlights by the `[IncludeInHighlight]` attribute in the source code. Currently, **Kill**, **Goal**, and **Manual** bookmarks are included.
+</Info>
+
+## Creating Highlights
+
+### From Session Recordings
+
+<Steps>
+  <Step title="Open Sessions page">
+    Navigate to the **Sessions** tab in Segra.
+  </Step>
+  
+  <Step title="Select a session">
+    Click on any session recording that has bookmarks.
+  </Step>
+  
+  <Step title="Click Create Highlight">
+    Look for the **Create Highlight** button (usually in the video controls).
+  </Step>
+  
+  <Step title="Wait for processing">
+    Segra extracts clips around each bookmark and combines them into a highlight reel.
+  </Step>
+</Steps>
+
+### Automatic Highlight Generation
+
+Enable **Auto-generate highlights** in **Settings > Highlights**:
+
+- Segra automatically creates a highlight reel after each session recording
+- Only creates highlights if the session has highlight-worthy bookmarks (kills, goals, manual)
+- Saves processing time by running in the background
+
+<Warning>
+Auto-generated highlights can use significant storage space if you play many games. Monitor your storage usage in **Settings > Storage**.
+</Warning>
+
+## Highlight Algorithm
+
+Segra uses a smart algorithm to create engaging highlights:
+
+### Time Window
+
+Each bookmark gets a **4-second window** before and after:
+
+- **4 seconds before** - Provides context for what led to the moment
+- **4 seconds after** - Captures the result and immediate aftermath
+- Total of **8 seconds per bookmark**
+
+### Segment Merging
+
+Overlapping segments are automatically merged:
+
+- If two bookmarks are within 8 seconds of each other, they're combined into one continuous clip
+- Prevents choppy transitions and duplicate footage
+- Results in smoother, more watchable highlights
+
+For example:
+- Kill at 1:00 → Clip from 0:56 to 1:04
+- Kill at 1:02 → Clip from 0:58 to 1:06
+- **Merged result:** One clip from 0:56 to 1:06
+
+### Fast Processing
+
+Highlights use **stream copy** technology:
+
+- Segments are extracted without re-encoding
+- Processing is extremely fast (seconds instead of minutes)
+- Original video quality is preserved
+- No generational quality loss
+
+## Game Integrations
+
+Segra has built-in integrations for popular games to automatically detect events:
+
+### Counter-Strike 2
+
+- **Kills** (including headshots)
+- **Deaths**
+- **Bomb plants** (future)
+- **Round wins** (future)
+
+Integration reads game state files (GSI) to detect events in real-time.
+
+### League of Legends
+
+- **Kills**
+- **Deaths**
+- **Assists**
+- **Objectives** (dragons, barons) (future)
+
+Integration monitors League Client API for live game events.
+
+### PUBG
+
+- **Kills**
+- **Knockdowns**
+- **Deaths**
+
+Integration analyzes telemetry data from PUBG API.
+
+### Rocket League
+
+- **Goals**
+- **Saves**
+- **Assists**
+
+Integration uses BakkesMod plugin to capture in-game events.
+
+<Tip>
+Enable or disable specific game integrations in **Settings > Game Integrations**. This can help reduce false positives or improve performance.
+</Tip>
+
+## AI-Powered Detection
+
+For games without native integration, Segra can use AI to detect highlights:
+
+### How AI Detection Works
+
+1. **Screen analysis** - Segra analyzes gameplay footage frame-by-frame
+2. **OCR (Optical Character Recognition)** - Reads on-screen text for kill feeds, scoreboards
+3. **Pattern matching** - Detects visual patterns associated with kills, deaths, etc.
+4. **Event classification** - Categorizes detected events as bookmarks
+
+### Enabling AI
+
+Enable AI in **Settings > Highlights**:
+
+- Toggle **Enable AI** to turn on AI-powered event detection
+- AI runs in the background during or after recording
+- Results are automatically added as bookmarks
+
+<Note>
+AI detection requires more system resources and may not be 100% accurate. Manual bookmarks (F8) are always the most reliable.
+</Note>
+
+### AI Accuracy
+
+AI detection accuracy varies by game:
+
+- **High accuracy:** Games with clear, consistent UI (kill feeds, score popups)
+- **Medium accuracy:** Games with variable UI or visual effects
+- **Low accuracy:** Games with minimal UI or cluttered screens
+
+You can improve accuracy by:
+- Playing in fullscreen mode
+- Using default UI settings (not heavily customized)
+- Ensuring good FPS (30+ minimum) during recording
+
+## Highlight Output
+
+Generated highlights are saved to the **Highlights** folder:
+
+```
+Segra/
+└── Highlights/
+    ├── Counter-Strike 2/
+    │   └── 2024-01-15_14-30-45.mp4
+    ├── League of Legends/
+    │   └── 2024-01-15_15-22-10.mp4
+    └── Rocket League/
+        └── 2024-01-16_18-45-33.mp4
+```
+
+Each highlight includes:
+
+- **Video file** - MP4 with all highlight segments
+- **Metadata** - Game, source session, bookmarks included
+- **Thumbnail** - Preview image
+- **Waveform** - Audio visualization
+
+### Highlight Length
+
+Highlight duration depends on the number of bookmarks:
+
+- **Few bookmarks** (1-5): 8-40 second highlight
+- **Many bookmarks** (10+): 1-3 minute highlight
+- **Dense action** (20+): 3-5 minute highlight
+
+Segra automatically merges overlapping segments, so actual duration may be shorter than total bookmark count × 8 seconds.
+
+## Editing Highlights
+
+### Create Custom Clips
+
+You can create custom clips from highlight videos:
+
+1. Open a highlight in the video player
+2. Use the timeline to select specific moments
+3. Click **Create Clip** to extract just those segments
+
+This is useful for creating ultra-short clips (15-30 seconds) for social media.
+
+### Re-generate Highlights
+
+If you manually add or remove bookmarks from a session:
+
+1. Open the session recording
+2. Add/remove bookmarks as needed
+3. Click **Create Highlight** again
+4. Segra re-generates the highlight with the updated bookmarks
+
+### Delete Unwanted Highlights
+
+Right-click any highlight and select **Delete** to remove it. This frees up storage space.
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="No highlights generated">
+    - Check that your session has highlight-worthy bookmarks (kills, goals, manual)
+    - Verify **Auto-generate highlights** is enabled in **Settings > Highlights**
+    - Deaths and assists are **not** included in highlights by default
+    - Try manually creating a highlight from the session page
+  </Accordion>
+  
+  <Accordion title="Missing important moments">
+    - Use **manual bookmarks (F8)** during gameplay to mark moments
+    - Enable **AI detection** in **Settings > Highlights** for unsupported games
+    - Check that game integration is enabled in **Settings > Game Integrations**
+    - Some events may not be detected if the game is minimized or alt-tabbed
+  </Accordion>
+  
+  <Accordion title="Too many false positives">
+    - Disable **AI detection** if it's creating too many incorrect bookmarks
+    - Disable specific game integrations that are producing errors
+    - Manually review and delete unwanted bookmarks before generating highlights
+  </Accordion>
+  
+  <Accordion title="Highlight is too long">
+    - Manually delete some bookmarks from the session before regenerating
+    - Create a custom clip from the highlight with only your best moments
+    - Adjust the bookmark types included (future feature)
+  </Accordion>
+  
+  <Accordion title="Highlight quality is poor">
+    - Highlights use stream copy and preserve original recording quality
+    - Improve your recording quality settings in **Settings > Video**
+    - Ensure your source session was recorded at good quality
+  </Accordion>
+</AccordionGroup>
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Use manual bookmarks" icon="bookmark">
+    Press F8 during gameplay to mark your best moments. This ensures they're included in highlights even if AI misses them.
+  </Card>
+  
+  <Card title="Review before sharing" icon="eye">
+    Always watch your generated highlights before sharing. Remove any segments that don't fit.
+  </Card>
+  
+  <Card title="Clean up bookmarks" icon="broom">
+    Delete unwanted bookmarks from sessions before generating highlights to keep them concise.
+  </Card>
+  
+  <Card title="Combine with clipping" icon="scissors">
+    Create highlights first, then make ultra-short clips from the highlight for social media.
+  </Card>
+</CardGroup>
+
+## Performance Tips
+
+- **Highlight generation** is very fast due to stream copy (usually under 10 seconds)
+- **AI analysis** is slower and runs in the background (1-5 minutes per session)
+- Multiple highlights can be generated simultaneously
+- Storage usage scales with the number of bookmarks (more bookmarks = longer highlights)
+
+## Related Features
+
+- [Recording](/features/recording) - Capture gameplay sessions with bookmarks
+- [Clipping](/features/clipping) - Create custom clips from highlights
+- [Uploads](/features/uploads) - Share highlights online

@@ -1,0 +1,363 @@
+---
+title: Game Detection Service
+description: Automatic game detection and recording service using WMI events and process monitoring
+---
+
+The `GameDetectionService` monitors running processes and automatically starts recording when supported games are detected. It uses Windows Management Instrumentation (WMI) events, foreground window hooks, and periodic process scanning.
+
+## Overview
+
+Implemented in `Backend/Services/GameDetectionService.cs`, the service provides:
+
+- Automatic game detection from multiple sources (games.json, Steam, EA, Epic, Ubisoft)
+- WMI-based process monitoring (start/stop events)
+- Foreground window change detection
+- Periodic process scanning for games that don't trigger events
+- Whitelist and blacklist support
+- Anti-cheat and launcher filtering
+
+## Core Methods
+
+### StartAsync
+
+Initializes and starts the game detection service.
+
+```csharp
+public static async void StartAsync()
+```
+
+**Behavior:**
+- Initializes game database from `games.json`
+- Starts WMI watchers for process creation and deletion
+- Starts periodic process check timer (runs every 10 seconds)
+- Runs on a background thread
+
+<Note>
+This method is automatically called by `OBSService.InitializeAsync()` after OBS initialization completes.
+</Note>
+
+```csharp Example
+GameDetectionService.StartAsync();
+```
+
+## Detection Strategies
+
+The service uses multiple strategies to detect games:
+
+### 1. Whitelist (Highest Priority)
+
+Games in `Settings.Instance.Whitelist` are always recorded, regardless of other criteria.
+
+```json
+[
+  {
+    "Name": "My Custom Game",
+    "Paths": [
+      "C:/Games/MyGame/game.exe",
+      "*/MyGame/*.exe"
+    ]
+  }
+]
+```
+
+### 2. Blacklist (Second Priority)
+
+Games in `Settings.Instance.Blacklist` are never recorded.
+
+```json
+[
+  {
+    "Name": "Launcher",
+    "Paths": [
+      "*/Launcher/launcher.exe"
+    ]
+  }
+]
+```
+
+### 3. Known Games Database
+
+The service checks if the executable path matches entries in `games.json`:
+
+```csharp
+bool isKnownGame = GameUtils.IsGameExePath(exePath);
+string gameName = GameUtils.GetGameNameFromExePath(exePath);
+```
+
+### 4. Launcher-Based Detection
+
+Automatically detects games from popular launchers:
+
+**Steam:**
+- Pattern: `*/steamapps/common/{GameFolder}/*.exe`
+- Resolves game name from `.acf` manifest files
+
+**EA Games:**
+- Pattern: `*/EA Games/{GameFolder}/*.exe`
+- Uses folder name as game name
+
+**Epic Games:**
+- Pattern: `*/Epic Games/{GameFolder}/*.exe`
+- Resolves game name from manifest JSON files in `%ProgramData%/Epic/EpicGamesLauncher/Data/Manifests`
+
+**Ubisoft:**
+- Pattern: `*/Ubisoft/{GameFolder}/*.exe`
+- Uses file description from EXE metadata
+
+### 5. Filtering
+
+The service filters out:
+
+**System Processes:**
+- Paths starting with `C:\Windows\System32\`
+- Paths starting with `C:\Windows\SysWOW64\`
+- Paths starting with `C:\Program Files\Git\`
+
+**Blacklisted Path Text:**
+```csharp
+string[] blacklistedPathTexts = GameUtils.GetBlacklistedPathTexts();
+// Example: "crash reporter", "uninstall", "updater"
+```
+
+**Anti-Cheat Clients:**
+```csharp
+string[] blacklistedWords = GameUtils.GetBlacklistedWords();
+// Example: "anti-cheat", "launcher", "crash handler"
+```
+
+Checked against file description metadata.
+
+**Splash Screen Detection:**
+
+If a known game executable exists in the same folder but differs from the current process, the current process is skipped (likely a splash screen or launcher).
+
+## Process Monitoring
+
+### WMI Event Watchers
+
+The service uses two WMI watchers:
+
+**Process Start Watcher:**
+```csharp
+SELECT * FROM __InstanceCreationEvent WITHIN 1 WHERE TargetInstance isa "Win32_Process"
+```
+
+Triggered when a new process starts. Checks if it's a recordable game.
+
+**Process Stop Watcher:**
+```csharp
+SELECT * FROM __InstanceDeletionEvent WITHIN 1 WHERE TargetInstance isa "Win32_Process"
+```
+
+Triggered when a process exits. Stops recording if it matches the currently recorded game.
+
+### Foreground Window Hook
+
+The `ForegroundHook` subclass monitors foreground window changes:
+
+```csharp
+GameDetectionService.ForegroundHook.Start();
+```
+
+**Behavior:**
+- Sets up a Windows event hook for `EVENT_SYSTEM_FOREGROUND`
+- Runs on a dedicated STA thread with a message loop
+- Resets `PreventRetryRecording` flag when foreground changes
+- Checks if the new foreground window is a recordable game
+
+<Warning>
+The foreground hook runs on a separate thread and must be properly stopped to avoid resource leaks:
+
+```csharp
+GameDetectionService.ForegroundHook.Stop();
+```
+</Warning>
+
+### Periodic Process Check
+
+A timer runs every 10 seconds to check for games that might not trigger other events:
+
+```csharp
+CheckForGames()
+```
+
+**Process:**
+1. Verifies the currently recording process is still alive
+2. Gets the foreground window and its process ID
+3. Resolves the executable path
+4. Checks if it should record the game
+5. Starts recording if criteria are met
+
+<Note>
+This timer catches games that launch without triggering WMI events or don't change the foreground window immediately.
+</Note>
+
+## Process Path Resolution
+
+The service uses multiple strategies to resolve process executable paths:
+
+### Strategy 1: QueryFullProcessImageName (Preferred)
+
+```csharp
+IntPtr hProcess = OpenProcess(0x1000, false, pid); // PROCESS_QUERY_LIMITED_INFORMATION
+QueryFullProcessImageName(hProcess, 0, sb, ref size);
+```
+
+Works for most processes, including elevated ones.
+
+### Strategy 2: Process.MainModule
+
+```csharp
+var proc = Process.GetProcessById(pid);
+return proc.MainModule.FileName;
+```
+
+Standard .NET approach (may fail for elevated processes).
+
+### Strategy 3: GetProcessImageFileName (Device Path)
+
+```csharp
+GetProcessImageFileName(hProcess, sb, out int _);
+return DevicePathToDrivePath(sb.ToString());
+```
+
+Converts device paths like `\Device\HarddiskVolume1\...` to `C:\...`
+
+### Strategy 4: WMI Query (Slowest)
+
+```csharp
+SELECT ExecutablePath FROM Win32_Process WHERE ProcessId = {pid}
+```
+
+Fallback for processes that can't be accessed via other methods.
+
+## Game Name Extraction
+
+The service attempts to extract friendly game names:
+
+```csharp
+private static string ExtractGameName(string exePath)
+```
+
+**Priority Order:**
+
+1. **games.json lookup**: `GameUtils.GetGameNameFromExePath(exePath)`
+2. **Steam ACF lookup**: Reads `.acf` manifest files to find game name
+3. **EA Games lookup**: Uses folder name after `/EA Games/`
+4. **Epic Games lookup**: Reads manifest JSON files for `DisplayName`
+5. **Ubisoft lookup**: Reads `FileDescription` from EXE metadata
+6. **Fallback**: Uses filename without extension
+
+<CodeGroup>
+```csharp Steam Example
+// Path: C:/Program Files/Steam/steamapps/common/VALORANT/game.exe
+// ACF file: steamapps/appmanifest_123456.acf
+// Returns: "VALORANT" (from ACF "name" field)
+```
+
+```csharp EA Example
+// Path: C:/Program Files/EA Games/EA SPORTS FC 26/game.exe
+// Returns: "EA SPORTS FC 26" (folder name)
+```
+
+```csharp Epic Example
+// Path: C:/Program Files/Epic Games/Fortnite/FortniteClient-Win64-Shipping.exe
+// Manifest: %ProgramData%/Epic/.../abc123.item
+// Returns: "Fortnite" (from JSON "DisplayName")
+```
+</CodeGroup>
+
+## Configuration Properties
+
+<ResponseField name="PreventRetryRecording" type="bool" default="false">
+  When true, prevents the periodic process check from starting a new recording. Automatically reset when foreground window changes.
+</ResponseField>
+
+## Integration with Recording Service
+
+When a game is detected, the service creates a pre-recording state:
+
+```csharp
+Settings.Instance.State.PreRecording = new PreRecording
+{
+    Game = gameName,
+    Status = "Waiting to start",
+    CoverImageId = coverImageId,
+    Pid = pid,
+    Exe = exePath
+};
+
+OBSService.StartRecording(gameName, exePath, pid: pid);
+```
+
+### Process Lifecycle
+
+1. **Process Start**: WMI detects new process
+2. **Path Resolution**: Resolve executable path using multiple strategies
+3. **Game Detection**: Check whitelist, blacklist, known games, launchers
+4. **Name Extraction**: Determine friendly game name
+5. **Pre-Recording**: Set state and notify frontend
+6. **Recording Start**: Call `OBSService.StartRecording()`
+7. **Process Stop**: WMI detects process exit
+8. **Recording Stop**: Call `OBSService.StopRecording()`
+
+## Error Handling
+
+The service includes robust error handling:
+
+### Path Resolution Failures
+
+If all strategies fail, returns empty string and skips the process.
+
+### Access Denied
+
+Elevated processes may not be accessible - uses limited-access APIs (`PROCESS_QUERY_LIMITED_INFORMATION`).
+
+### Process Exited
+
+Handles `ArgumentException` and `InvalidOperationException` when process exits during detection.
+
+### WMI Exceptions
+
+Catches and logs WMI event handler exceptions to prevent service interruption.
+
+## Performance Considerations
+
+- **WMI Events**: Near-instant detection (1-second polling interval)
+- **Foreground Hook**: Immediate detection on window change
+- **Process Check**: 10-second intervals (low overhead)
+- **Path Resolution**: Cached drive mappings for device-to-drive conversion
+
+<Note>
+The service initializes drive mappings once at startup:
+
+```csharp
+InitializeDriveMappings();
+```
+
+This caches `\Device\HarddiskVolume1` → `C:\` mappings for fast conversion.
+</Note>
+
+## Logging
+
+The service provides detailed logging:
+
+```
+[OnProcessStarted] Application started: PID 12345, Path: C:/Games/Game.exe
+Detected known game Valorant at C:/Riot Games/.../VALORANT.exe, will record
+Game Valorant found in whitelist, will record
+Blocked executable with blacklisted path text 'crash reporter': ...
+Detected anticheat client for this executable, will not record
+Skipping splash.exe - a known game exe exists in 'GameFolder'
+```
+
+## Thread Safety
+
+The service uses multiple threads:
+
+- **Main Thread**: Service initialization
+- **Background Thread**: WMI event handling
+- **Hook Thread**: Foreground window events (STA)
+- **Timer Thread**: Periodic process checks
+
+No shared mutable state requires locking - each handler independently checks `Settings.Instance.State`.

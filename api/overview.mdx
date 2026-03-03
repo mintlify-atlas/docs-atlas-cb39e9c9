@@ -1,0 +1,234 @@
+---
+title: 'API Overview'
+description: 'Understanding Segra internal architecture and frontend-backend communication'
+---
+
+## Architecture
+
+Segra uses a **dual-process architecture** to separate concerns and maximize performance:
+
+- **Backend Process** (C#/.NET): Built on OBS, handles recording, video processing, file operations, and system integration
+- **Frontend Process** (React/TypeScript): Provides the user interface through a WebView
+
+### Communication Layer
+
+The frontend and backend communicate through two distinct channels:
+
+<CardGroup cols={2}>
+  <Card title="WebSocket" icon="signal">
+    Real-time bidirectional communication for state updates, progress notifications, and system events.
+  </Card>
+  <Card title="window.external" icon="code">
+    Frontend-to-backend command channel for user actions and settings changes.
+  </Card>
+</CardGroup>
+
+## Frontend to Backend
+
+The frontend sends commands to the backend using the `window.external.sendMessage()` interface, wrapped by the `sendMessageToBackend` utility:
+
+```typescript Frontend/src/Utils/MessageUtils.ts
+export const sendMessageToBackend = (method: string, parameters?: any) => {
+  const message = { Method: method, Parameters: parameters };
+  if ((window as any).external && typeof (window as any).external.sendMessage === 'function') {
+    const messageString = JSON.stringify(message);
+    (window as any).external.sendMessage(messageString);
+  } else {
+    console.error('window.external.sendMessage is not available.');
+  }
+};
+```
+
+### Message Format
+
+All messages sent to the backend follow this structure:
+
+<ResponseField name="Method" type="string" required>
+  The command/action to execute (e.g., "StartRecording", "CreateClip")
+</ResponseField>
+
+<ResponseField name="Parameters" type="object">
+  Optional parameters specific to the method being called
+</ResponseField>
+
+### Example: Starting a Recording
+
+```typescript
+import { sendMessageToBackend } from '../Utils/MessageUtils';
+
+// Start recording manually
+sendMessageToBackend('StartRecording');
+
+// Login with authentication tokens
+sendMessageToBackend('Login', {
+  accessToken: session.access_token,
+  refreshToken: session.refresh_token,
+});
+```
+
+## Backend to Frontend
+
+The backend sends real-time updates to the frontend via WebSocket on `ws://localhost:5000/`.
+
+### WebSocket Connection
+
+The frontend establishes a WebSocket connection using the `WebSocketProvider` context:
+
+```typescript Frontend/src/Context/WebSocketContext.tsx
+const { readyState } = useWebSocket('ws://localhost:5000/', {
+  onOpen: () => {
+    sendMessageToBackend('NewConnection');
+  },
+  onMessage: (event) => {
+    const data: WebSocketMessage = JSON.parse(event.data);
+    // Dispatch to listeners
+    window.dispatchEvent(
+      new CustomEvent('websocket-message', {
+        detail: data,
+      }),
+    );
+  },
+  shouldReconnect: () => true,
+  reconnectAttempts: Infinity,
+  reconnectInterval: 3000,
+  heartbeat: {
+    message: 'ping',
+    returnMessage: 'pong',
+    timeout: 30000,
+    interval: 15000,
+  },
+});
+```
+
+### Message Format
+
+All WebSocket messages from the backend follow this structure:
+
+<ResponseField name="method" type="string" required>
+  The event type (e.g., "Settings", "ClipProgress", "ShowModal")
+</ResponseField>
+
+<ResponseField name="content" type="object" required>
+  The payload data specific to the method
+</ResponseField>
+
+### Heartbeat Protocol
+
+The WebSocket connection maintains a heartbeat to detect disconnections:
+
+- **Frontend → Backend**: Sends `"ping"` every 15 seconds
+- **Backend → Frontend**: Responds with `{"method": "pong", "content": {}}`
+- **Timeout**: Connection considered dead after 30 seconds without a pong
+
+## Connection Lifecycle
+
+<Steps>
+  <Step title="Frontend Starts">
+    React app initializes and the `WebSocketProvider` mounts
+  </Step>
+  
+  <Step title="WebSocket Connects">
+    Connection established to `ws://localhost:5000/`
+  </Step>
+  
+  <Step title="NewConnection Message">
+    Frontend sends `NewConnection` command to backend
+  </Step>
+  
+  <Step title="Initial Sync">
+    Backend responds with:
+    - Current settings state (`Settings` message)
+    - Available games list (`GameList` message)
+    - App version (`AppVersion` message)
+  </Step>
+  
+  <Step title="Session Sync">
+    If user is authenticated, frontend sends `Login` message with tokens
+  </Step>
+  
+  <Step title="Heartbeat Begins">
+    Frontend starts sending ping every 15 seconds
+  </Step>
+</Steps>
+
+<Note>
+  The backend automatically closes any existing WebSocket connection when a new one is established, ensuring only one active connection at a time.
+</Note>
+
+## State Management
+
+The backend maintains application state through the `Settings.Instance` singleton (Backend/Core/Models/Settings.cs). Key state includes:
+
+- **Recording State**: Active recordings, pre-recordings
+- **Content Library**: Videos, clips, replays with metadata
+- **User Preferences**: Video quality, storage locations, keybinds
+- **Game Lists**: Whitelisted and blacklisted games
+
+Whenever state changes, the backend sends a `Settings` message to sync the frontend:
+
+```csharp Backend/App/MessageService.cs
+public static async Task SendSettingsToFrontend(string cause)
+{
+    if (!Program.hasLoadedInitialSettings || Settings.Instance._isBulkUpdating)
+        return;
+
+    Log.Information("Sending settings to frontend ({Cause})", cause);
+    await SendFrontendMessage("Settings", Settings.Instance);
+}
+```
+
+<Warning>
+  Bulk operations set `_isBulkUpdating = true` to prevent spamming the frontend with updates. A single update is sent after the operation completes.
+</Warning>
+
+## Error Handling
+
+Both communication channels implement error handling:
+
+### Frontend Errors
+
+```typescript
+if ((window as any).external && typeof (window as any).external.sendMessage === 'function') {
+  // Send message
+} else {
+  console.error('window.external.sendMessage is not available.');
+}
+```
+
+### Backend Errors
+
+The backend catches and logs exceptions in the message handler:
+
+```csharp
+try {
+    var jsonDoc = JsonDocument.Parse(message);
+    // Handle message
+}
+catch (JsonException ex) {
+    Log.Error($"Failed to parse message as JSON: {ex.Message}");
+}
+catch (Exception ex) {
+    Log.Error($"Unhandled exception in message handler: {ex.Message}");
+}
+```
+
+Critical errors are displayed to users via the `ShowModal` message:
+
+```csharp
+await MessageService.ShowModal(
+    "Error", 
+    $"Failed to create clip: {ex.Message}", 
+    "error"
+);
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="WebSocket API" icon="plug" href="/api/websocket-api">
+    Explore all WebSocket message types and their schemas
+  </Card>
+  <Card title="Recording Service" icon="video" href="/api/recording-service">
+    OBS recording control and configuration
+  </Card>
+</CardGroup>

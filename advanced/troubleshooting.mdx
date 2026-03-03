@@ -1,0 +1,401 @@
+---
+title: Troubleshooting
+description: Solutions to common issues and problems with Segra
+---
+
+This guide covers common issues you might encounter while using Segra and how to resolve them.
+
+## Recording Issues
+
+### Game Capture Not Hooking
+
+If game capture shows a black screen or doesn't hook into your game:
+
+<AccordionGroup>
+  <Accordion title="Solution 1: Check for Blacklisted Executables">
+    OBS internally blacklists certain applications that cannot be hooked:
+    - Browsers (Chrome, Firefox, Edge)
+    - Launchers (Steam, Battle.net, Origin)
+    - System apps (Explorer, Task Manager)
+
+    **Workaround**: Segra automatically falls back to display capture for blacklisted apps.
+  </Accordion>
+
+  <Accordion title="Solution 2: Run Game in Borderless/Windowed Mode">
+    Some games work better with game capture when running in borderless windowed mode:
+    1. Open your game's graphics settings
+    2. Change from Fullscreen to Borderless Window or Windowed mode
+    3. Restart recording
+  </Accordion>
+
+  <Accordion title="Solution 3: Check Anti-Cheat Software">
+    Anti-cheat systems may block game capture hooks:
+    - **Easy Anti-Cheat**: Usually compatible
+    - **BattlEye**: May require special configuration
+    - **Vanguard (Valorant)**: Often blocks all hooks
+
+    **Workaround**: Use display capture instead of game capture for games with aggressive anti-cheat.
+  </Accordion>
+
+  <Accordion title="Solution 4: 90-Second Timeout">
+    Segra waits 90 seconds for game capture to hook. If it doesn't hook within this time:
+    - The game capture source is automatically removed
+    - Recording continues with display capture only
+    - Check logs for "Game capture did not hook within 90 seconds"
+  </Accordion>
+</AccordionGroup>
+
+### Recording Fails to Start
+
+<Steps>
+  <Step title="Check Encoder Availability">
+    Ensure your selected encoder is available:
+    - Open Segra Settings → Video
+    - Verify your codec (NVENC/AMF/QSV) is listed
+    - If not available, switch to a compatible encoder
+  </Step>
+
+  <Step title="Verify Storage Space">
+    Segra requires available disk space:
+    - Check your content folder has sufficient free space
+    - Storage limit is configurable in Settings → Storage
+    - Segra automatically manages storage based on your limit
+  </Step>
+
+  <Step title="Review Logs">
+    Check Segra's logs for specific errors:
+    - Logs are located in `%AppData%/Segra/logs/`
+    - Look for "Failed to start recording" messages
+    - Common errors include encoder initialization failures
+  </Step>
+</Steps>
+
+### Display Capture Shows Black Screen
+
+<Warning>
+  Black screens in display capture are often caused by graphics driver issues or incompatible capture methods.
+</Warning>
+
+**Solutions**:
+
+1. **Switch Capture Method**:
+   - Settings → Video → Display Capture Method
+   - Try switching between DXGI and WGC
+   - WGC works better on Windows 10 1903+ and Windows 11
+
+2. **Update Graphics Drivers**:
+   - NVIDIA: Download from [nvidia.com](https://nvidia.com)
+   - AMD: Download from [amd.com](https://amd.com)
+   - Intel: Download from [intel.com](https://intel.com)
+
+3. **Check Multi-GPU Systems**:
+   - Laptops with integrated + dedicated GPUs may have issues
+   - Ensure Segra is running on the dedicated GPU
+   - Set GPU preference in Windows Settings → System → Display → Graphics
+
+## Audio Issues
+
+### No Audio in Recording
+
+<Tabs>
+  <Tab title="Check Audio Sources">
+    1. Open Segra Settings → Audio
+    2. Verify input/output devices are selected
+    3. Ensure device volumes are not at 0%
+    4. Test audio devices in Windows Sound Settings
+  </Tab>
+
+  <Tab title="Audio Output Mode">
+    If using "Game Only" or "Game + Discord" mode:
+    - Audio won't record until game capture hooks
+    - Desktop audio is used as fallback until hook succeeds
+    - Check logs for "Game hooked" message
+    - Switch to "All Audio" mode if game doesn't hook
+  </Tab>
+
+  <Tab title="Default Device Changes">
+    If you selected a "Default" device:
+    - Changing Windows default device won't update recording
+    - Stop and restart recording to pick up new default
+    - Or manually select specific device in Segra settings
+  </Tab>
+</Tabs>
+
+### Audio Desync
+
+If audio and video become out of sync:
+
+<Note>
+  Audio desync is rare but can occur with very long recordings or certain audio drivers.
+</Note>
+
+**Solutions**:
+- Restart the recording session
+- Update your audio drivers
+- Try disabling audio enhancements in Windows Sound Settings
+- Reduce the number of audio sources being recorded
+
+### Microphone Audio Too Quiet/Loud
+
+1. Adjust individual device volume in Segra Settings → Audio
+2. Volume range: 0.0 (muted) to 1.0 (100%)
+3. Can boost beyond 100% by manually editing settings (not recommended)
+
+## Performance Issues
+
+### High CPU Usage
+
+Segra automatically sets itself to **High priority** during recording. If CPU usage is too high:
+
+<CardGroup cols={2}>
+  <Card title="Use Hardware Encoding" icon="microchip">
+    Switch from x264 (CPU) to NVENC/AMF/QSV (GPU) in Settings → Video → Codec
+  </Card>
+  <Card title="Lower Resolution" icon="compress">
+    Record at 1080p instead of 1440p/4K in Settings → Video → Resolution
+  </Card>
+  <Card title="Reduce Frame Rate" icon="film">
+    Record at 30 FPS instead of 60 FPS in Settings → Video → Frame Rate
+  </Card>
+  <Card title="Adjust Bitrate" icon="gauge">
+    Lower bitrate reduces encoding workload (Settings → Video → Quality)
+  </Card>
+</CardGroup>
+
+### High GPU Usage
+
+When using hardware encoding (NVENC/AMF/QSV):
+
+- **Expected**: 5-15% GPU usage for encoding
+- **High Usage**: 20%+ indicates potential issues
+
+**Solutions**:
+- Ensure game is using the same GPU as Segra
+- Close other GPU-intensive applications
+- Reduce recording resolution or bitrate
+- Consider using CPU encoding (x264) if GPU is heavily loaded by game
+
+### Game Performance Impact
+
+<Tip>
+  Segra is designed for minimal performance impact, typically 1-5% FPS reduction.
+</Tip>
+
+If you experience significant FPS drops:
+
+1. **Check Encoder Load**:
+   - Hardware encoders (NVENC/AMF/QSV) have minimal impact
+   - Software encoder (x264) can impact CPU-heavy games
+
+2. **Optimize Settings**:
+   - See [Performance Guide](/advanced/performance) for detailed optimization
+   - Lower recording resolution (doesn't affect game resolution)
+   - Use VBR instead of CBR for better efficiency
+
+3. **Monitor System Resources**:
+   - Open Task Manager during gameplay
+   - Check if CPU, GPU, RAM, or disk is maxed out
+   - Identify bottleneck and adjust accordingly
+
+## File and Storage Issues
+
+### Orphaned Files Without Metadata
+
+Segra may detect video files without metadata after crashes or improper shutdowns:
+
+<Steps>
+  <Step title="Automatic Detection">
+    Segra scans for orphaned files on startup and shows recovery prompt
+  </Step>
+  <Step title="AI Identification">
+    If AI is enabled, Segra uses AI to identify which game the video is from
+  </Step>
+  <Step title="Choose Action">
+    Options:
+    - **Recover**: Creates metadata and adds to library
+    - **Delete**: Removes the orphaned file
+    - **Skip**: Ignores for this session
+  </Step>
+</Steps>
+
+### Storage Limit Exceeded
+
+<Warning>
+  Segra automatically deletes oldest content when storage limit is reached.
+</Warning>
+
+To manage storage:
+
+1. **Increase Limit**: Settings → Storage → Storage Limit (GB)
+2. **Manual Cleanup**: Delete old recordings from library
+3. **Move Content**: Change content folder to larger drive
+4. **Compression**: Enable automatic compression for clips
+
+### Missing Recordings After Update
+
+If recordings are missing after updating Segra:
+
+1. Check if content folder path changed (Settings → Storage)
+2. Manually scan content folder (Settings → Storage → Reload Content)
+3. Look for orphaned files (Segra will auto-detect on restart)
+4. Check logs for migration errors
+
+## Encoder Issues
+
+### NVENC Encoder Not Available
+
+<Accordion title="Requirements for NVENC">
+  - NVIDIA GPU (GTX 600 series or newer)
+  - Updated NVIDIA drivers
+  - GPU must support NVENC (check [NVIDIA's compatibility list](https://developer.nvidia.com/video-encode-and-decode-gpu-support-matrix-new))
+</Accordion>
+
+**Troubleshooting**:
+1. Update GPU drivers to latest version
+2. Restart Segra after driver update
+3. Check if other applications are using NVENC (limit: 3 concurrent sessions on consumer GPUs)
+4. Verify GPU in Task Manager → Performance → GPU
+
+### AMD VCE/AMF Encoder Not Available
+
+**Requirements**:
+- AMD GPU (GCN architecture or newer)
+- Updated AMD Adrenalin drivers
+- Windows 10 or newer
+
+**Troubleshooting**:
+1. Install latest AMD Adrenalin drivers
+2. Enable hardware acceleration in AMD settings
+3. Restart Segra
+4. If still unavailable, use x264 (software) as fallback
+
+### Intel QSV Encoder Not Available
+
+**Requirements**:
+- Intel CPU with Quick Sync Video (2nd gen Core or newer)
+- Integrated graphics must be enabled in BIOS
+- Updated Intel graphics drivers
+
+**Troubleshooting**:
+1. Enable Intel integrated graphics in BIOS
+2. Install Intel Graphics Driver from [intel.com](https://intel.com)
+3. On laptops with dedicated GPU, ensure iGPU is not disabled
+4. Restart Segra after driver installation
+
+## Replay Buffer Issues
+
+### Replay Buffer Not Saving
+
+<Steps>
+  <Step title="Check Buffer Status">
+    Ensure replay buffer is actively recording (check Segra overlay/status)
+  </Step>
+  <Step title="Verify Hotkey">
+    Default: F10
+    - Check Settings → Keybinds → Save Replay Buffer
+    - Test hotkey is not conflicting with other applications
+  </Step>
+  <Step title="Check Storage Space">
+    Replay buffer requires available disk space to save
+  </Step>
+  <Step title="Review Logs">
+    Look for "Replay buffer saved to:" or error messages in logs
+  </Step>
+</Steps>
+
+### Replay Buffer Duration Too Short/Long
+
+- Settings → Recording → Replay Buffer Duration (seconds)
+- Default: 30 seconds
+- Longer durations require more memory
+- Maximum size can be configured separately
+
+## Game Detection Issues
+
+### Game Not Auto-Starting Recording
+
+<AccordionGroup>
+  <Accordion title="Check Whitelist/Blacklist">
+    Settings → Games:
+    - Whitelist: Only these games trigger recording
+    - Blacklist: These games never trigger recording
+    - Empty whitelist = all games auto-record (except blacklisted)
+  </Accordion>
+
+  <Accordion title="Verify Game Executable">
+    Segra detects games based on:
+    - Executable name matching known games database
+    - IGDB game database integration
+    - Custom whitelist entries
+  </Accordion>
+
+  <Accordion title="Manual Recording">
+    If auto-detection fails, use manual recording:
+    - Segra system tray → Start Manual Recording
+    - Or set custom keybind for manual start/stop
+  </Accordion>
+</AccordionGroup>
+
+### Wrong Game Detected
+
+1. Check IGDB integration (requires Segra.tv account)
+2. Manually edit game name in recording metadata
+3. Add custom game mapping in Settings → Games
+
+## Update and Installation Issues
+
+### OBS Installation Failed
+
+<Warning>
+  Segra downloads OBS components on first launch. This requires internet connection.
+</Warning>
+
+**Solutions**:
+1. Check internet connection
+2. Disable antivirus temporarily (may block download)
+3. Run Segra as administrator
+4. Check firewall settings for Segra.exe
+5. Manually download OBS from Segra's CDN (check logs for URL)
+
+### Segra Update Failed
+
+1. Check for sufficient disk space
+2. Close all Segra processes completely
+3. Run Segra as administrator
+4. Manually download installer from [GitHub Releases](https://github.com/Segergren/Segra/releases)
+
+## Getting Help
+
+If you're still experiencing issues:
+
+<CardGroup cols={2}>
+  <Card title="Check Logs" icon="file-lines">
+    Logs location: `%AppData%/Segra/logs/`
+    
+    Look for ERROR and WARNING messages
+  </Card>
+  <Card title="GitHub Issues" icon="github" href="https://github.com/Segergren/Segra/issues">
+    Report bugs or request features
+    
+    Include logs and system info
+  </Card>
+  <Card title="Discord Community" icon="discord">
+    Get help from other users
+    
+    Quick responses from community
+  </Card>
+  <Card title="Documentation" icon="book">
+    Review other guides
+    
+    Performance tips, integration guides
+  </Card>
+</CardGroup>
+
+<Note>
+  When reporting issues, always include:
+  - Segra version
+  - Windows version
+  - GPU model and driver version
+  - Log file from `%AppData%/Segra/logs/`
+  - Steps to reproduce the issue
+</Note>

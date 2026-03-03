@@ -1,0 +1,292 @@
+---
+title: Recording Service
+description: OBS-based recording service that handles game capture, display capture, and replay buffer functionality
+---
+
+The `OBSService` provides core recording functionality for Segra using OBS Studio. It manages video encoding, audio capture, game detection integration, and replay buffer operations.
+
+## Overview
+
+The Recording Service is implemented as a static class in `Backend/Recorder/OBSService.cs` and provides:
+
+- OBS initialization and configuration
+- Game capture with automatic hook detection
+- Display capture fallback
+- Session recording and replay buffer modes
+- Multi-track audio encoding
+- Video encoder configuration (hardware and software)
+
+## Public Properties
+
+<ResponseField name="IsInitialized" type="bool">
+  Indicates whether OBS has been successfully initialized
+</ResponseField>
+
+<ResponseField name="DetectedGpuVendor" type="GpuVendor">
+  The detected GPU vendor (Nvidia, AMD, Intel, or Unknown) for hardware encoding
+</ResponseField>
+
+<ResponseField name="CapturedWindowWidth" type="uint?">
+  Width of the currently captured game window (null if not captured)
+</ResponseField>
+
+<ResponseField name="CapturedWindowHeight" type="uint?">
+  Height of the currently captured game window (null if not captured)
+</ResponseField>
+
+<ResponseField name="InstalledOBSVersion" type="string?">
+  The version string of the installed OBS libraries
+</ResponseField>
+
+<ResponseField name="GameCaptureSource" type="GameCapture?">
+  The active game capture source instance (null when not recording)
+</ResponseField>
+
+## Core Methods
+
+### InitializeAsync
+
+Initializes the OBS recording engine and sets up all necessary resources.
+
+```csharp
+public static async Task InitializeAsync()
+```
+
+**Behavior:**
+- Downloads OBS binaries if not present
+- Configures OBS with default video (1920x1080@60fps) and audio settings
+- Sets up logging callbacks
+- Detects available encoders
+- Starts the game detection service
+
+<Note>
+This method must be called before any recording operations. It will automatically download OBS libraries if they don't exist.
+</Note>
+
+### StartRecording
+
+Starts a new recording session with the specified game.
+
+```csharp
+public static bool StartRecording(
+    string name = "Manual Recording",
+    string exePath = "Unknown",
+    bool startManually = false,
+    int? pid = null
+)
+```
+
+<ParamField path="name" type="string" default="Manual Recording">
+  The display name of the game being recorded
+</ParamField>
+
+<ParamField path="exePath" type="string" default="Unknown">
+  Full path to the game executable
+</ParamField>
+
+<ParamField path="startManually" type="bool" default="false">
+  If true, uses display capture only (no game hook)
+</ParamField>
+
+<ParamField path="pid" type="int?" default="null">
+  Process ID of the game to record
+</ParamField>
+
+**Returns:** `bool` - True if recording started successfully, false otherwise
+
+**Recording Modes:**
+- **Session Mode**: Records continuously to a single MP4 file
+- **Buffer Mode**: Maintains a rolling replay buffer (save on demand)
+- **Hybrid Mode**: Both session recording and replay buffer simultaneously
+
+<CodeGroup>
+```csharp Automatic Game Recording
+OBSService.StartRecording(
+    name: "Valorant",
+    exePath: "C:\\Riot Games\\VALORANT\\live\\ShooterGame\\Binaries\\Win64\\VALORANT-Win64-Shipping.exe",
+    pid: 12345
+);
+```
+
+```csharp Manual Display Recording
+OBSService.StartRecording(
+    name: "Manual Recording",
+    startManually: true
+);
+```
+</CodeGroup>
+
+### StopRecording
+
+Stops the active recording session and performs cleanup.
+
+```csharp
+public static async Task StopRecording()
+```
+
+**Behavior:**
+- Stops all active outputs (session and/or replay buffer)
+- Waits up to 30 seconds for graceful stop, then force-stops if needed
+- Generates metadata, thumbnails, and waveforms for recorded content
+- Cleans up encoders and sources
+- Optionally discards sessions without manual bookmarks (if configured)
+
+<Warning>
+This method uses a semaphore to prevent concurrent stop attempts. Multiple calls will be serialized automatically.
+</Warning>
+
+### SaveReplayBuffer
+
+Saves the current replay buffer to disk and generates metadata.
+
+```csharp
+public static async Task<bool> SaveReplayBuffer()
+```
+
+**Returns:** `bool` - True if the replay buffer was saved successfully
+
+**Process:**
+1. Checks if replay buffer is active
+2. Triggers save operation
+3. Waits for save callback (up to 5 seconds)
+4. Retrieves saved file path
+5. Generates thumbnail, metadata, and waveform
+6. Resets buffer for next recording
+
+```csharp Example Usage
+if (await OBSService.SaveReplayBuffer())
+{
+    Console.WriteLine("Replay buffer saved successfully!");
+}
+else
+{
+    Console.WriteLine("Failed to save replay buffer.");
+}
+```
+
+<Note>
+After saving, the replay buffer is automatically reset so subsequent saves only include new footage.
+</Note>
+
+### Shutdown
+
+Shuts down OBS and releases all resources.
+
+```csharp
+public static void Shutdown()
+```
+
+**Behavior:**
+- Disposes OBS context
+- Releases all native resources
+- Sets `IsInitialized` to false
+
+## Audio Configuration
+
+The service supports multiple audio modes:
+
+### Audio Output Modes
+
+- **All**: Captures all desktop audio sources
+- **GameOnly**: Captures only game audio (uses game capture's built-in audio)
+- **GameAndDiscord**: Captures game audio plus Discord application audio
+
+### Separate Audio Tracks
+
+When `EnableSeparateAudioTracks` is enabled:
+- **Track 1**: Full mix of all audio sources
+- **Tracks 2-6**: Individual isolated sources (mic, desktop, game, Discord)
+
+Up to 5 sources can have dedicated tracks. Additional sources are mixed into Track 1 only.
+
+## Video Configuration
+
+### Resolution and Aspect Ratio
+
+- Base resolution matches the captured window or primary monitor
+- Output resolution respects the max resolution setting from user preferences
+- Automatic 4:3 to 16:9 stretching (when enabled)
+- Downscaling maintains aspect ratio and rounds to multiples of 4
+
+### Encoders
+
+Supported encoders are automatically detected based on GPU:
+
+**NVIDIA:**
+- `h264_nvenc`
+- `hevc_nvenc`
+- `av1_nvenc`
+
+**AMD:**
+- `h264_amf`
+- `hevc_amf`
+- `av1_amf`
+
+**Intel:**
+- `h264_qsv`
+- `hevc_qsv`
+- `av1_qsv`
+
+**Software:**
+- `libx264`
+- `libx265`
+
+### Rate Control
+
+- **CBR** (Constant Bitrate): Fixed bitrate
+- **VBR** (Variable Bitrate): Min/max bitrate range
+- **CRF** (Constant Rate Factor): Quality-based (software encoders)
+- **CQP** (Constant Quantization Parameter): Quality-based (hardware encoders)
+
+## Game Capture
+
+### Hook Detection
+
+The service monitors game capture hook status:
+- 90-second timeout for initial hook
+- Automatic fallback to display capture if hook fails
+- Event-based hook/unhook notifications
+
+### Capture Priority
+
+1. **Game Capture** (top layer, visible when hooked)
+2. **Display Capture** (fallback layer, always active)
+
+This ensures recording continues even if the game hook fails.
+
+<Warning>
+Some games and applications are blacklisted by OBS and cannot be hooked (e.g., `explorer.exe`, `chrome.exe`, `discord.exe`).
+</Warning>
+
+## File Organization
+
+Recorded content is organized by type and game:
+
+```
+ContentFolder/
+├── sessions/
+│   └── {GameName}/
+│       └── 2026-03-03_14-30-00.mp4
+├── buffers/
+│   └── {GameName}/
+│       └── 2026-03-03_14-35-00.mp4
+└── clips/
+    └── {GameName}/
+        └── 2026-03-03_14-40-00.mp4
+```
+
+## Error Handling
+
+The service includes robust error handling:
+
+- Automatic retry with force-stop if graceful shutdown fails
+- Process priority management (High during recording, Normal after)
+- Orphaned file detection and recovery
+- Thread-safe stop operations with semaphore locking
+
+## Integration Points
+
+- **GameDetectionService**: Automatically starts recording when games launch
+- **ContentService**: Generates thumbnails and metadata
+- **KeybindCaptureService**: Records user inputs during session
+- **GameIntegrationService**: Manages game-specific overlays

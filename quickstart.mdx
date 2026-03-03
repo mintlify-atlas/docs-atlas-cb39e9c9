@@ -1,80 +1,259 @@
 ---
-title: "Quickstart"
-description: "Start building awesome documentation in minutes"
+title: Quickstart
+description: Get started with Segra and record your first gaming session in minutes
 ---
 
-## Get started in three steps
+This guide will walk you through setting up Segra and recording your first gameplay session.
 
-Get your documentation site running locally and make your first customization.
+## Prerequisites
 
-### Step 1: Set up your local environment
-
-<AccordionGroup>
-  <Accordion icon="copy" title="Clone your docs locally">
-    During the onboarding process, you created a GitHub repository with your docs content if you didn't already have one. You can find a link to this repository in your [dashboard](https://dashboard.mintlify.com).
-    
-    To clone the repository locally so that you can make and preview changes to your docs, follow the [Cloning a repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository) guide in the GitHub docs.
-  </Accordion>
-  <Accordion icon="rectangle-terminal" title="Start the preview server">
-    1. Install the Mintlify CLI: `npm i -g mint`
-    2. Navigate to your docs directory and run: `mint dev`
-    3. Open `http://localhost:3000` to see your docs live!
-    
-    <Tip>Your preview updates automatically as you edit files.</Tip>
-  </Accordion>
-</AccordionGroup>
-
-### Step 2: Deploy your changes
-
-<AccordionGroup>
-  <Accordion icon="github" title="Install our GitHub app">
-    Install the Mintlify GitHub app from your [dashboard](https://dashboard.mintlify.com/settings/organization/github-app).
-    
-    Our GitHub app automatically deploys your changes to your docs site, so you don't need to manage deployments yourself.
-</Accordion>
-<Accordion icon="palette" title="Update your site name and colors">
-    For a first change, let's update the name and colors of your docs site.
-
-    1. Open `docs.json` in your editor.
-    2. Change the `"name"` field to your project name.
-    3. Update the `"colors"` to match your brand.
-    4. Save and see your changes instantly at `http://localhost:3000`.
-
-    <Tip>Try changing the primary color to see an immediate difference!</Tip>
-  </Accordion>
-</AccordionGroup>
-
-### Step 3: Go live
-
-<Accordion icon="rocket" title="Publish your docs">
-  1. Commit and push your changes.
-  2. Your docs will update and be live in moments!
-</Accordion>
-
-## Next steps
-
-Now that you have your docs running, explore these key features:
+Before you begin, make sure you have:
 
 <CardGroup cols={2}>
-
-<Card title="Write Content" icon="pen-to-square" href="/essentials/markdown">
-  Learn MDX syntax and start writing your documentation.
-</Card>
-
-<Card title="Customize style" icon="palette" href="/essentials/settings">
-  Make your docs match your brand perfectly.
-</Card>
-
-<Card title="Add code examples" icon="square-code" href="/essentials/code">
-  Include syntax-highlighted code blocks.
-</Card>
-
-<Card title="API documentation" icon="code" href="/api-reference/introduction">
-  Auto-generate API docs from OpenAPI specs.
-</Card>
-
+  <Card title="Segra Installed" icon="check">
+    Follow the [installation guide](/installation) if you haven't installed Segra yet
+  </Card>
+  <Card title="Windows 10/11" icon="windows">
+    Windows 10 (build 17763+) or Windows 11 required
+  </Card>
 </CardGroup>
 
-<Note>
-  **Need help?** See our [full documentation](https://mintlify.com/docs) or join our [community](https://mintlify.com/community).
-</Note>
+## First-Time Setup
+
+When you first launch Segra, you'll go through initial configuration:
+
+<Steps>
+  <Step title="OBS Components">
+    Segra will download required OBS components (approximately 150MB). This is a one-time download.
+    
+    <Note>
+      If the download fails, check your internet connection and try restarting Segra.
+    </Note>
+  </Step>
+
+  <Step title="Choose Recording Directory">
+    Select where Segra will save your recordings. Make sure you have enough free space.
+    
+    **Recommended**: Use a fast SSD drive for best performance and choose a drive with at least 100GB free space.
+  </Step>
+
+  <Step title="Select Encoder">
+    Segra will detect your GPU and recommend the best encoder:
+    
+    - **NVENC** (NVIDIA GPUs) - Best performance and quality
+    - **AMD VCE** (AMD GPUs) - Good performance and quality
+    - **x264** (CPU) - Fallback option, higher CPU usage
+    
+    The default settings are optimized for your hardware.
+  </Step>
+</Steps>
+
+## Default Hotkeys
+
+Segra comes with these default hotkeys:
+
+| Hotkey | Action | Description |
+|--------|--------|-------------|
+| **F8** | Add Bookmark | Mark important moments during recording |
+| **F10** | Save Replay Buffer | Save the last 2 minutes of gameplay |
+
+<Tip>
+  You can customize these hotkeys in [Settings](/configuration/hotkeys).
+</Tip>
+
+## Record Your First Session
+
+Segra offers three recording modes. For your first session, we recommend **Hybrid Mode** (the default):
+
+<Steps>
+  <Step title="Launch Your Game">
+    Simply start playing your game. Segra will automatically detect it and begin recording in the background.
+    
+    <Info>
+      Look for the Segra icon in your system tray to confirm recording has started.
+    </Info>
+  </Step>
+
+  <Step title="Mark Important Moments">
+    Press **F8** during gameplay to create bookmarks at exciting moments (kills, goals, clutch plays).
+    
+    These bookmarks will help you find highlights later.
+  </Step>
+
+  <Step title="Stop Recording">
+    Exit your game or click "Stop Recording" in the Segra interface.
+    
+    Your session will be saved automatically to your recordings folder.
+  </Step>
+
+  <Step title="Review and Clip">
+    Open Segra to view your recording. Use the clip editor to:
+    
+    - Cut highlights from your session
+    - Trim unwanted parts
+    - Create shareable clips
+  </Step>
+</Steps>
+
+## Understanding Recording Modes
+
+Segra offers three recording modes to fit your workflow:
+
+| Mode | Description | Best For |
+|------|-------------|----------|
+| **Hybrid** | Records entire session + saves replay buffer clips | Most users - you get both full sessions and instant replays |
+| **Session** | Records from game start to game end | When you want full gameplay sessions without replay buffer |
+| **Replay Buffer** | Keeps rolling 2-minute buffer, save on demand | Saving only the best moments without full session files |
+
+<Accordion title="Which mode should I use?">
+  - **New users**: Start with **Hybrid** mode - it gives you the most flexibility
+  - **Content creators**: Use **Session** mode for full gameplay to edit later
+  - **Highlight hunters**: Use **Replay Buffer** mode to save only epic moments
+</Accordion>
+
+## Create Your First Clip
+
+<Steps>
+  <Step title="Open the Clip Editor">
+    In Segra, navigate to the **Clips** tab and select your recording.
+  </Step>
+
+  <Step title="Select Timeline">
+    Drag to select the portion of your video you want to clip. You can:
+    
+    - Use bookmarks as quick selection points
+    - Fine-tune start and end times
+    - Preview your selection
+  </Step>
+
+  <Step title="Choose Quality">
+    Select clip export settings:
+    
+    - **Fast** - Quick export with original quality
+    - **High Quality** - Re-encode for smaller file size
+    - **Custom** - Advanced settings for specific needs
+    
+    <Tip>
+      Use "Fast" mode for quick clips to share with friends. It completes in seconds by copying the video stream.
+    </Tip>
+  </Step>
+
+  <Step title="Create Clip">
+    Click "Create Clip" and wait for processing. You'll see a progress bar.
+    
+    Once complete, your clip is ready to share!
+  </Step>
+</Steps>
+
+## Upload to Segra.tv
+
+Share your clips instantly with Segra's built-in upload:
+
+<Steps>
+  <Step title="Create Account">
+    Sign up for a free account at [Segra.tv](https://segra.tv) or log in through the Segra app.
+  </Step>
+
+  <Step title="Upload Clip">
+    Right-click any clip in Segra and select "Upload to Segra.tv".
+    
+    The upload will happen in the background - you can keep gaming!
+  </Step>
+
+  <Step title="Share Link">
+    Once uploaded, you'll receive a shareable link. Copy and share with friends, Discord, or social media.
+  </Step>
+</Steps>
+
+## AI-Powered Highlights
+
+For supported games (Counter-Strike 2, League of Legends), Segra can automatically create highlight reels:
+
+<Accordion title="How AI highlights work">
+  Segra tracks your in-game stats (kills, deaths, goals, assists) and automatically creates bookmarks. When you're done playing, it can generate a highlight reel of your best moments.
+  
+  This feature requires:
+  - A supported game with integration enabled
+  - Bookmarks created during gameplay (manual or automatic)
+  - At least one recording session with bookmarks
+</Accordion>
+
+<Info>
+  Enable game integration in [Settings → Games](/configuration/game-integration) to use AI highlights.
+</Info>
+
+## Configure Audio Settings
+
+By default, Segra records all audio sources. You can customize this:
+
+<Tabs>
+  <Tab title="Separate Audio Tracks">
+    Record game audio and microphone on separate tracks for easier editing:
+    
+    1. Go to **Settings → Audio**
+    2. Enable "Separate Audio Tracks"
+    3. Select up to 6 audio sources
+    
+    This allows you to adjust or remove audio tracks in post-production.
+  </Tab>
+  
+  <Tab title="Audio Output Modes">
+    Choose what audio to record:
+    
+    - **All Audio** (default) - Captures all system sounds
+    - **Game Only** - Records only game audio
+    - **Game + Discord** - Game audio plus Discord voice chat
+    
+    Change this in **Settings → Audio → Output Mode**.
+  </Tab>
+</Tabs>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Game not detected">
+    If Segra doesn't auto-detect your game:
+    
+    1. Add it to the whitelist in **Settings → Games**
+    2. Make sure the game is running in fullscreen or borderless window mode
+    3. Check that auto-start recording is enabled
+  </Accordion>
+
+  <Accordion title="Black screen recording">
+    If you see a black screen in recordings:
+    
+    - Try switching from Game Capture to Display Capture in settings
+    - Run your game in borderless window mode instead of fullscreen
+    - Update your GPU drivers
+  </Accordion>
+
+  <Accordion title="Performance issues">
+    If your game is lagging with Segra running:
+    
+    - Lower recording resolution (try 1080p instead of 1440p/4K)
+    - Reduce recording frame rate to 60 FPS
+    - Ensure you're using hardware encoding (NVENC/AMF)
+    - Close other background applications
+    
+    See the [Performance Guide](/advanced/performance) for more optimization tips.
+  </Accordion>
+</AccordionGroup>
+
+## Next Steps
+
+Now that you've recorded your first session, explore more features:
+
+<CardGroup cols={2}>
+  <Card title="Recording Modes" icon="video" href="/features/recording">
+    Learn about Session, Buffer, and Hybrid recording modes
+  </Card>
+  <Card title="Game Integration" icon="gamepad" href="/configuration/game-integration">
+    Set up automatic highlight detection for your favorite games
+  </Card>
+  <Card title="Hotkeys" icon="keyboard" href="/configuration/hotkeys">
+    Customize keyboard shortcuts for faster workflow
+  </Card>
+  <Card title="Video Presets" icon="sliders" href="/configuration/video-presets">
+    Optimize recording quality and file size
+  </Card>
+</CardGroup>

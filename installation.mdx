@@ -1,0 +1,142 @@
+---
+title: Installation
+description: Download and install Segra on Windows 10 or newer.
+---
+
+Segra is available for Windows 10 (build 17763 / 1809) and newer. Follow these steps to get Segra installed on your system.
+
+## Download Segra
+
+<Steps>
+  <Step title="Get the installer">
+    Download `Segra-win-Setup.exe` from the [latest release](https://github.com/Segergren/Segra/releases/latest) on GitHub.
+    
+    <Note>
+    Segra releases are code-signed by [SignPath.io](https://signpath.io) and certified by [SignPath Foundation](https://signpath.org) for your security.
+    </Note>
+  </Step>
+  
+  <Step title="Run the setup">
+    Double-click the downloaded `Segra-win-Setup.exe` file to launch the installer.
+    
+    <Warning>
+    Windows SmartScreen may show a warning for new releases. This is normal for newly signed applications. Click "More info" and then "Run anyway" to proceed.
+    </Warning>
+  </Step>
+  
+  <Step title="Complete installation">
+    Follow the installation wizard prompts. Segra will be installed to your system and a desktop shortcut will be created.
+  </Step>
+</Steps>
+
+## System Requirements
+
+Before installing, ensure your system meets these requirements:
+
+| Requirement | Specification |
+|-------------|---------------|
+| **Operating System** | Windows 10 (build 17763 / 1809) or newer |
+| **Target Framework** | .NET 9.0 (bundled with installer) |
+| **Graphics** | NVIDIA or AMD GPU recommended for hardware encoding |
+| **Storage** | At least 1GB free space (plus space for recordings) |
+| **Memory** | 4GB RAM minimum, 8GB+ recommended |
+
+<Note>
+Segra uses **GPU hardware encoding** (NVENC/AMD VCE) by default for optimal performance. CPU encoding (x264) is also available.
+</Note>
+
+## First Launch
+
+After installation:
+
+1. **Launch Segra** from the desktop shortcut or Start menu
+2. **Initial Setup**: Segra will download the required OBS components on first launch
+3. **Configure Settings**: Set up your preferred recording directory, video quality, and hotkeys
+
+<CardGroup cols={2}>
+  <Card title="Next: Quickstart" icon="rocket" href="/quickstart">
+    Get started with your first recording
+  </Card>
+  <Card title="Configure Settings" icon="gear">
+    Customize recording quality, hotkeys, and storage paths
+  </Card>
+</CardGroup>
+
+## Default Configuration
+
+Segra comes with sensible defaults:
+
+- **Recording Directory**: `%USERPROFILE%\Videos\Segra`
+- **Cache Directory**: `%APPDATA%\Segra`
+- **Resolution**: Auto-detected based on your primary monitor (720p/1080p/1440p/4K)
+- **Frame Rate**: 60 FPS
+- **Encoder**: GPU (NVENC/AMD VCE)
+- **Recording Mode**: Hybrid (session + buffer)
+- **Hotkeys**:
+  - `F8`: Create bookmark
+  - `F10`: Save replay buffer
+
+## Uninstallation
+
+To remove Segra from your system:
+
+<Steps>
+  <Step title="Open Windows Settings">
+    Press `Win + I` to open Windows Settings
+  </Step>
+  
+  <Step title="Navigate to Apps">
+    Go to `Apps` → `Installed apps`
+  </Step>
+  
+  <Step title="Uninstall Segra">
+    Search for `Segra`, click the three dots, and select `Uninstall`
+  </Step>
+</Steps>
+
+<Warning>
+Uninstalling Segra does **not** automatically delete your recordings. Your video files in the recording directory will remain intact.
+</Warning>
+
+## Updating Segra
+
+Segra automatically checks for updates and will notify you when a new version is available. Updates are seamless and preserve your settings and recordings.
+
+### Beta Updates
+
+To receive beta updates:
+
+1. Open Segra Settings
+2. Navigate to the **General** section
+3. Enable **"Receive Beta Updates"**
+
+<Note>
+Beta versions may contain experimental features and bugs. Only enable this if you want to help test new functionality.
+</Note>
+
+## Troubleshooting
+
+### OBS Components Not Downloading
+
+If OBS components fail to download:
+
+1. Check your internet connection
+2. Ensure Windows Firewall isn't blocking Segra
+3. Try restarting Segra
+
+### Performance Issues
+
+For optimal performance:
+
+- Use **GPU encoding** (Settings → Encoder → GPU)
+- Lower resolution if needed (Settings → Resolution)
+- Close unnecessary background applications
+- Ensure your GPU drivers are up to date
+
+### Storage Warnings
+
+Segra monitors disk space and will warn you when approaching storage limits. You can:
+
+- Increase the storage limit in Settings
+- Delete old recordings
+- Change the recording directory to a drive with more space

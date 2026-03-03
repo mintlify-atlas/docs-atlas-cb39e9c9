@@ -1,0 +1,239 @@
+---
+title: Hotkeys
+description: Configure keyboard shortcuts for bookmarks and replay buffer in Segra
+---
+
+Hotkeys allow you to control Segra during gameplay without switching windows. Configure global keyboard shortcuts to mark important moments and save replays.
+
+## Available Actions
+
+Segra supports two primary keybind actions:
+
+<CardGroup cols={2}>
+  <Card title="Create Bookmark" icon="bookmark">
+    Mark important moments during recording for easy navigation later
+  </Card>
+  <Card title="Save Replay Buffer" icon="floppy-disk">
+    Save the last N seconds of gameplay to disk (Buffer/Hybrid mode only)
+  </Card>
+</CardGroup>
+
+## Default Keybindings
+
+<ParamField path="CreateBookmark" type="keybind" default="F8">
+  Creates a bookmark at the current timestamp in your recording. Bookmarks appear in the timeline and can be used to quickly jump to key moments.
+  
+  **Default**: `F8`
+</ParamField>
+
+<ParamField path="SaveReplayBuffer" type="keybind" default="F10">
+  Saves the replay buffer to disk as a video file. Only functional when using Buffer or Hybrid recording mode.
+  
+  **Default**: `F10`
+</ParamField>
+
+## Configuring Keybindings
+
+### From the Settings UI
+
+1. Navigate to **Settings** > **Recording** section
+2. Scroll to the **Keybindings** section
+3. Click the key display button next to the action you want to change
+4. Press the desired key combination
+5. The keybinding will update automatically
+
+<Steps>
+  <Step title="Select Action">
+    Click the keybind button (e.g., "F8") next to the action
+  </Step>
+  <Step title="Press Keys">
+    The button will show "Press Keys..." - press your desired combination
+  </Step>
+  <Step title="Confirm">
+    Release the keys to save the new keybinding
+  </Step>
+  <Step title="Cancel (Optional)">
+    Press `Esc` while capturing to cancel and keep the existing binding
+  </Step>
+</Steps>
+
+### Supported Key Combinations
+
+You can bind:
+
+- **Single keys**: `F8`, `F10`, `K`, etc.
+- **Modifier + Key**: `Ctrl+K`, `Alt+R`, `Shift+B`
+- **Multiple modifiers**: `Ctrl+Shift+K`, `Ctrl+Alt+F1`
+
+<Note>
+Function keys (F1-F12) are recommended for gaming as they don't conflict with in-game controls.
+</Note>
+
+## Supported Keys
+
+### Function Keys
+- F1 through F24
+
+### Modifier Keys
+- `Ctrl` (Control)
+- `Alt` (Alternate)
+- `Shift`
+- `Win` (Windows key)
+
+### Special Keys
+- Arrow keys (←, ↑, →, ↓)
+- `Space`, `Enter`, `Tab`, `Esc`
+- `Home`, `End`, `PgUp`, `PgDn`
+- `Insert`, `Delete`, `Backspace`
+- `Num Lock`
+
+### Alphanumeric
+- Letters: A-Z
+- Numbers: 0-9
+
+### Symbols
+- `;`, `=`, `,`, `-`, `.`, `/`, `` ` ``, `[`, `\`, `]`, `'`
+
+## Enabling/Disabling Keybindings
+
+Each keybinding can be temporarily disabled without removing it:
+
+1. Navigate to **Settings** > **Recording** > **Keybindings**
+2. Click the checkbox next to the action
+3. Unchecked keybindings remain configured but won't trigger
+
+<Tip>
+Disable keybindings during non-gaming activities to prevent accidental triggers.
+</Tip>
+
+## Keybinding Settings JSON
+
+Keybindings are stored in `settings.json` as:
+
+```json
+"keybindings": [
+  {
+    "action": "CreateBookmark",
+    "enabled": true,
+    "keys": [119]
+  },
+  {
+    "action": "SaveReplayBuffer",
+    "enabled": true,
+    "keys": [121]
+  }
+]
+```
+
+**Key Properties**:
+
+<ParamField path="action" type="enum" required>
+  The action to perform: `CreateBookmark` or `SaveReplayBuffer`
+</ParamField>
+
+<ParamField path="enabled" type="boolean" default="true">
+  Whether the keybinding is active
+</ParamField>
+
+<ParamField path="keys" type="array" required>
+  Array of key codes. For combinations, includes modifier codes first (16=Shift, 17=Ctrl, 18=Alt), then the main key code.
+  
+  Example: `[17, 75]` = Ctrl+K (17=Ctrl, 75=K)
+</ParamField>
+
+## Common Key Codes
+
+| Key | Code | Key | Code | Key | Code |
+|-----|------|-----|------|-----|------|
+| F1  | 112  | F7  | 118  | A   | 65   |
+| F2  | 113  | F8  | 119  | K   | 75   |
+| F3  | 114  | F9  | 120  | R   | 82   |
+| F4  | 115  | F10 | 121  | Space | 32 |
+| F5  | 116  | F11 | 122  | Enter | 13 |
+| F6  | 117  | F12 | 123  | Esc | 27   |
+
+## Use Cases
+
+<Tabs>
+  <Tab title="Create Bookmark">
+    **When to use**:
+    - Mark kills, deaths, or important plays
+    - Flag moments to review later
+    - Create chapter markers for long sessions
+    - Highlight areas for clip creation
+    
+    **Example workflow**:
+    1. Press F8 when you get a triple kill
+    2. After the session, open the recording
+    3. Jump between bookmarks to find highlights
+    4. Create clips from bookmarked moments
+  </Tab>
+  
+  <Tab title="Save Replay Buffer">
+    **When to use**:
+    - Capture unexpected moments in Buffer mode
+    - Save the last 30 seconds of gameplay
+    - Conserve disk space by only saving highlights
+    
+    **Example workflow**:
+    1. Set recording mode to Buffer (30 seconds)
+    2. Play normally - last 30s stays in memory
+    3. Something amazing happens - press F10
+    4. The last 30 seconds are saved to disk
+    
+    <Warning>
+    Only works in Buffer or Hybrid mode. Has no effect in Session mode.
+    </Warning>
+  </Tab>
+</Tabs>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Keybinding not working">
+    **Possible causes**:
+    - Keybinding is disabled (check the checkbox)
+    - Game is running in admin mode (run Segra as admin)
+    - Key combination conflicts with in-game binding
+    - Segra service is not running
+    
+    **Solutions**:
+    - Verify the keybinding is enabled
+    - Check Segra's system tray icon is present
+    - Try a different key combination
+    - Restart Segra
+  </Accordion>
+  
+  <Accordion title="Wrong action triggered">
+    If pressing a key triggers the wrong action:
+    - Check for overlapping keybindings
+    - Ensure no two actions use the same key combination
+    - Reconfigure the conflicting keybinding
+  </Accordion>
+  
+  <Accordion title="Can't capture certain key combinations">
+    Some key combinations may be reserved by:
+    - Windows (e.g., `Win+L` locks the PC)
+    - Your keyboard driver software
+    - Other running applications
+    
+    Use function keys or less common combinations to avoid conflicts.
+  </Accordion>
+</AccordionGroup>
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Use Function Keys" icon="keyboard">
+    F-keys rarely conflict with games and are easy to reach
+  </Card>
+  <Card title="Consistent Bindings" icon="repeat">
+    Use the same keys across different games for muscle memory
+  </Card>
+  <Card title="Test Before Recording" icon="vial">
+    Verify keybindings work before important sessions
+  </Card>
+  <Card title="Document Your Setup" icon="book">
+    Keep a note of your keybindings if you use custom combinations
+  </Card>
+</CardGroup>

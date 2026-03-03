@@ -1,0 +1,350 @@
+---
+title: Clip Service
+description: FFmpeg-based clip creation service that extracts and concatenates video segments from recordings
+---
+
+The `ClipService` handles creating clips from recorded sessions and replay buffers. It uses FFmpeg to extract segments, apply encoding settings, and concatenate multiple selections into a single output file.
+
+## Overview
+
+Implemented in `Backend/Media/ClipService.cs`, the service provides:
+
+- Extract multiple segments from different source videos
+- Concatenate segments into a single clip
+- Re-encode with configurable quality settings
+- Hardware and software encoding support
+- Progress tracking and cancellation
+- Automatic metadata generation
+
+## Core Methods
+
+### CreateClips
+
+Creates a clip from one or more video selections.
+
+```csharp
+public static async Task CreateClips(List<Selection> selections)
+```
+
+<ParamField path="selections" type="List<Selection>">
+  List of video segments to include in the clip. Each selection contains:
+  - `Game`: Game name
+  - `FileName`: Source video filename
+  - `FilePath`: Full path to source video (optional, auto-resolved if missing)
+  - `Type`: Content type (Session, Buffer, or Clip)
+  - `StartTime`: Start time in seconds
+  - `EndTime`: End time in seconds
+  - `Title`: Optional clip title
+  - `IgdbId`: Optional IGDB game ID
+</ParamField>
+
+**Process Flow:**
+
+1. Validates selections and calculates total duration
+2. Extracts each segment to a temporary file
+3. Concatenates temporary files (if multiple selections)
+4. Generates metadata, thumbnail, and waveform
+5. Adds clip to content library
+6. Cleans up temporary files
+
+**Progress Events:**
+
+Sends `ClipProgress` messages to the frontend with:
+- `id`: Unique clip operation ID
+- `progress`: Progress percentage (0-100, or -1 for error)
+- `selections`: The original selections list
+- `error`: Error message (only when progress = -1)
+
+<CodeGroup>
+```csharp Single Selection
+var selections = new List<Selection>
+{
+    new Selection
+    {
+        Game = "Valorant",
+        FileName = "2026-03-03_14-30-00",
+        Type = "Session",
+        StartTime = 45.5,
+        EndTime = 78.2,
+        Title = "Ace Round"
+    }
+};
+
+await ClipService.CreateClips(selections);
+```
+
+```csharp Multiple Selections
+var selections = new List<Selection>
+{
+    new Selection
+    {
+        Game = "Valorant",
+        FileName = "2026-03-03_14-30-00",
+        Type = "Session",
+        StartTime = 45.5,
+        EndTime = 78.2
+    },
+    new Selection
+    {
+        Game = "Valorant",
+        FileName = "2026-03-03_15-00-00",
+        Type = "Buffer",
+        StartTime = 10.0,
+        EndTime = 25.0
+    }
+};
+
+await ClipService.CreateClips(selections);
+```
+</CodeGroup>
+
+### CancelClip
+
+Cancels an in-progress clip operation.
+
+```csharp
+public static async void CancelClip(int clipId)
+```
+
+<ParamField path="clipId" type="int">
+  The unique ID of the clip operation to cancel (provided in ClipProgress messages)
+</ParamField>
+
+**Behavior:**
+- Kills all active FFmpeg processes associated with the clip ID
+- Removes processes from tracking
+- Sends completion message to frontend
+- Cleanup of temporary files is handled by the original CreateClips task
+
+```csharp Example Usage
+// From frontend message handler
+int clipId = 123456789;
+ClipService.CancelClip(clipId);
+```
+
+<Note>
+Cancellation is immediate and forces FFmpeg process termination. Partial output files are automatically cleaned up.
+</Note>
+
+## Encoding Configuration
+
+The service uses settings from `Settings.Instance` to configure encoding:
+
+### Encoder Selection
+
+<ParamField path="ClipEncoder" type="string">
+  - `"gpu"`: Use hardware acceleration
+  - `"cpu"`: Use software encoding
+</ParamField>
+
+### Codec Selection
+
+<ParamField path="ClipCodec" type="string">
+  - `"h264"`: H.264/AVC
+  - `"h265"`: H.265/HEVC
+  - `"av1"`: AV1
+</ParamField>
+
+### Hardware Encoder Settings
+
+**NVIDIA (NVENC):**
+
+<ParamField path="ClipQualityGpu" type="int">
+  CQ level for NVENC (lower = higher quality, typical range: 15-35)
+</ParamField>
+
+<ParamField path="ClipPreset" type="string">
+  NVENC preset: `p1` (fastest) to `p7` (slowest), or `Quality`, `Performance`
+</ParamField>
+
+FFmpeg arguments: `-cq {quality} -preset {preset}`
+
+**AMD (AMF):**
+
+<ParamField path="ClipQualityGpu" type="int">
+  QP level for AMF (lower = higher quality, typical range: 15-35)
+</ParamField>
+
+<ParamField path="ClipPreset" type="string">
+  AMF usage mode: `quality`, `transcoding`, `lowlatency`, `ultralowlatency`
+</ParamField>
+
+FFmpeg arguments: `-rc cqp -qp_i {quality} -qp_p {quality} -usage {preset}`
+
+**Intel (QuickSync):**
+
+<ParamField path="ClipQualityGpu" type="int">
+  Global quality for QSV ICQ mode (lower = higher quality, typical range: 15-35)
+</ParamField>
+
+<ParamField path="ClipPreset" type="string">
+  QSV preset: `veryfast`, `faster`, `fast`, `medium`, `slow`, `slower`, `veryslow`
+</ParamField>
+
+FFmpeg arguments: `-global_quality {quality} -preset {preset}`
+
+### Software Encoder Settings
+
+<ParamField path="ClipQualityCpu" type="int">
+  CRF value for libx264/libx265 (lower = higher quality, typical range: 18-28)
+</ParamField>
+
+<ParamField path="ClipPreset" type="string">
+  x264/x265 preset: `ultrafast`, `superfast`, `veryfast`, `faster`, `fast`, `medium`, `slow`, `slower`, `veryslow`
+</ParamField>
+
+FFmpeg arguments: `-crf {quality} -preset {preset}`
+
+### Additional Settings
+
+<ParamField path="ClipFps" type="int">
+  Target frame rate (0 = keep source frame rate)
+</ParamField>
+
+<ParamField path="ClipAudioQuality" type="string">
+  AAC audio bitrate (e.g., `"128k"`, `"192k"`, `"256k"`, `"320k"`)
+</ParamField>
+
+## Codec Matrix
+
+The service automatically selects the appropriate codec based on encoder and codec settings:
+
+| GPU Vendor | ClipCodec | FFmpeg Encoder |
+|------------|-----------|----------------|
+| NVIDIA | h264 | `h264_nvenc` |
+| NVIDIA | h265 | `hevc_nvenc` |
+| NVIDIA | av1 | `av1_nvenc` |
+| AMD | h264 | `h264_amf` |
+| AMD | h265 | `hevc_amf` |
+| AMD | av1 | `av1_amf` |
+| Intel | h264 | `h264_qsv` |
+| Intel | h265 | `hevc_qsv` |
+| Intel | av1 | `av1_qsv` |
+| CPU | h264 | `libx264` |
+| CPU | h265 | `libx265` |
+| CPU | av1 | Not supported (falls back to libx264) |
+
+<Warning>
+If GPU vendor detection fails, the service automatically falls back to CPU encoding with a warning log message.
+</Warning>
+
+## FFmpeg Command Examples
+
+### Single Clip Extraction
+
+```bash
+ffmpeg -y -ss 45.5 -t 32.7 \
+  -i "input.mp4" \
+  -c:v h264_nvenc -preset p4 -cq 20 -r 60 \
+  -c:a aac -b:a 192k \
+  -movflags +faststart \
+  "output.mp4"
+```
+
+### Multi-Clip Concatenation
+
+```bash
+ffmpeg -y -f concat -safe 0 \
+  -i "concat_list.txt" \
+  -c copy \
+  -movflags +faststart \
+  "output.mp4"
+```
+
+Where `concat_list.txt` contains:
+```
+file 'C:\\Temp\\clip123.mp4'
+file 'C:\\Temp\\clip456.mp4'
+```
+
+## File Organization
+
+Clips are saved to:
+
+```
+ContentFolder/clips/{GameName}/{Timestamp}.mp4
+```
+
+Example:
+```
+C:/Users/User/Videos/Segra/clips/Valorant/2026-03-03_14-45-30.mp4
+```
+
+Each clip includes:
+- **Video file**: `{timestamp}.mp4`
+- **Metadata**: `{timestamp}.json` (game, title, timestamps, IGDB ID)
+- **Thumbnail**: `{timestamp}.jpg`
+- **Waveform**: `{timestamp}_waveform.png`
+
+## Progress Tracking
+
+The service tracks progress at multiple stages:
+
+| Progress % | Stage |
+|-----------|-------|
+| 0-95% | Extracting and encoding segments |
+| 96% | Concatenating segments |
+| 97% | Verifying output file |
+| 98% | Generating metadata |
+| 99% | Creating thumbnail and waveform |
+| 100% | Complete - loading into library |
+| -1 | Error occurred |
+
+Progress is weighted by clip duration:
+```csharp
+double currentProgress = (processedDuration + (progress * clipDuration)) / totalDuration * 95;
+```
+
+## Error Handling
+
+The service includes comprehensive error handling:
+
+### Validation Errors
+- Empty selections list
+- Zero or negative total duration
+- FFmpeg not found
+- Missing source files
+
+### Extraction Errors
+- Failed to create temp clip file
+- FFmpeg process errors
+- Cancellation during extraction
+
+### Concatenation Errors
+- Failed to create output file
+- File not ready for metadata generation
+
+### Cleanup
+
+All temporary files are cleaned up in the `finally` block:
+- Individual clip segments
+- Concat list file
+- Partial output files (on error)
+
+<Note>
+Errors are logged with full stack traces and reported to the frontend via ClipProgress messages with `progress: -1` and an error description.
+</Note>
+
+## Thread Safety
+
+The service uses a `ProcessLock` object to ensure thread-safe access to the active FFmpeg process dictionary:
+
+```csharp
+lock (ProcessLock)
+{
+    ActiveFFmpegProcesses[clipId] = process;
+}
+```
+
+This prevents race conditions when:
+- Adding processes during extraction
+- Removing processes after completion
+- Cancelling clips from frontend
+
+## Integration Points
+
+- **FFmpegService**: Executes FFmpeg with progress callbacks
+- **ContentService**: Generates thumbnails, metadata, and waveforms
+- **SettingsService**: Loads clips into content library
+- **StorageService**: Sanitizes game names for folder organization
+- **MessageService**: Sends progress updates to frontend

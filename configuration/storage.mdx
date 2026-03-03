@@ -1,0 +1,372 @@
+---
+title: Storage Settings
+description: Manage recording storage locations, limits, and automatic cleanup in Segra
+---
+
+Configure where Segra stores recordings, metadata, and manage disk space with automatic cleanup policies.
+
+## Storage Locations
+
+Segra uses two primary folders:
+
+### Content Folder
+
+<ParamField path="contentFolder" type="string" default="%USERPROFILE%/Videos/Segra">
+  Main storage location for:
+  - Session recordings
+  - Replay buffer saves
+  - Clips
+  - Highlights
+  
+  **Default**: `C:/Users/YourName/Videos/Segra`
+</ParamField>
+
+### Cache Folder
+
+<ParamField path="cacheFolder" type="string" default="%APPDATA%/Segra">
+  Stores metadata and generated files:
+  - Video metadata (JSON files)
+  - Thumbnails
+  - Audio waveforms
+  - Temporary files
+  
+  **Default**: `C:/Users/YourName/AppData/Roaming/Segra`
+</ParamField>
+
+<Note>
+The cache folder is separate from content to allow different storage locations. For example, you can keep metadata on your fast SSD while storing large video files on a slower HDD.
+</Note>
+
+## Changing Storage Locations
+
+### From Settings UI
+
+1. Navigate to **Settings** > **Storage**
+2. Click **Browse** next to Recording Path or Cache Path
+3. Select the new folder location
+4. Segra will migrate existing content automatically
+
+<Warning>
+Changing the content folder will trigger a warning if the new location has less free space than your current storage usage.
+</Warning>
+
+### Storage Migration
+
+When you change storage locations:
+
+<Steps>
+  <Step title="Validation">
+    Segra checks that the new location has sufficient free space
+  </Step>
+  <Step title="Content Scan">
+    Segra scans the new folder for existing recordings
+  </Step>
+  <Step title="Metadata Update">
+    Metadata is updated to reflect the new file locations
+  </Step>
+  <Step title="Cache Migration (if applicable)">
+    If changing cache folder, thumbnails and waveforms are moved automatically
+  </Step>
+</Steps>
+
+<Tip>
+Segra does not automatically move your video files when changing the content folder. You should manually move files if desired, or start fresh in the new location.
+</Tip>
+
+## Storage Limit
+
+<ParamField path="storageLimit" type="integer" default="100">
+  Maximum storage in GB for recordings.
+  
+  When this limit is reached, Segra automatically deletes the oldest recordings to free space.
+  
+  **Range**: 1 GB to unlimited (set a high value like 10000 for effectively unlimited)
+</ParamField>
+
+### How Storage Limits Work
+
+<Steps>
+  <Step title="Continuous Monitoring">
+    Segra tracks the total size of all recordings in the content folder
+  </Step>
+  <Step title="Threshold Check">
+    When total size exceeds the storage limit, cleanup is triggered
+  </Step>
+  <Step title="Oldest First Deletion">
+    Recordings are deleted oldest-first until usage falls below the limit
+  </Step>
+  <Step title="Metadata Cleanup">
+    Associated thumbnails, waveforms, and metadata are also removed
+  </Step>
+</Steps>
+
+<Warning>
+Setting a storage limit lower than your current folder size will immediately trigger deletion of old recordings to meet the limit.
+</Warning>
+
+### Current Storage Usage
+
+View your current storage usage in Settings:
+
+```
+Current folder size: 45.32 GB / 100 GB
+```
+
+This is calculated from:
+- All session recordings
+- All replay buffer saves
+- All clips
+- All highlights
+
+<Note>
+The cache folder (metadata, thumbnails) does not count toward the storage limit.
+</Note>
+
+## Automatic Cleanup
+
+Segra provides automatic cleanup options:
+
+### Session Cleanup
+
+<ParamField path="discardSessionsWithoutBookmarks" type="boolean" default="false">
+  Automatically delete session recordings that have no bookmarks.
+  
+  **When enabled**:
+  - After each recording session ends
+  - Segra checks if any bookmarks were created
+  - If no bookmarks exist, the session is deleted
+  
+  **Use case**: Only keep sessions where something noteworthy happened (marked with bookmarks).
+</ParamField>
+
+<Warning>
+This setting only affects session recordings, not replay buffer saves or clips.
+</Warning>
+
+### Compression
+
+<ParamField path="removeOriginalAfterCompression" type="boolean" default="false">
+  Delete the original recording after creating a compressed clip.
+  
+  **When enabled**:
+  - After clip compression completes
+  - Original file is deleted
+  - Only the compressed clip remains
+  
+  **Use case**: Reduce disk space by replacing full-quality recordings with smaller compressed clips.
+</ParamField>
+
+<Note>
+Compression settings are separate from recording settings. You can record at high quality, then compress clips for sharing while saving disk space.
+</Note>
+
+## Folder Structure
+
+Segra organizes files within the content and cache folders:
+
+### Content Folder Structure
+
+```
+C:/Users/YourName/Videos/Segra/
+├── Sessions/
+│   ├── Counter-Strike 2_2024-01-15_14-30-45.mkv
+│   └── League of Legends_2024-01-15_16-22-10.mkv
+├── Buffers/
+│   ├── Rocket League_replay_2024-01-15_18-05-33.mkv
+│   └── PUBG_replay_2024-01-15_19-12-08.mkv
+├── Clips/
+│   ├── CS2_ace_clip.mp4
+│   └── LoL_pentakill.mp4
+└── Highlights/
+    └── best_plays_compilation.mp4
+```
+
+### Cache Folder Structure
+
+```
+C:/Users/YourName/AppData/Roaming/Segra/
+├── metadata/
+│   ├── sessions/
+│   │   ├── Counter-Strike 2_2024-01-15_14-30-45.json
+│   │   └── League of Legends_2024-01-15_16-22-10.json
+│   ├── buffers/
+│   ├── clips/
+│   └── highlights/
+├── thumbnails/
+│   ├── sessions/
+│   ├── buffers/
+│   ├── clips/
+│   └── highlights/
+└── waveforms/
+    ├── sessions/
+    ├── buffers/
+    ├── clips/
+    └── highlights/
+```
+
+## File Naming Convention
+
+Recordings are named automatically:
+
+```
+{GameName}_{Timestamp}.{Extension}
+```
+
+**Examples**:
+- `Counter-Strike 2_2024-01-15_14-30-45.mkv`
+- `League of Legends_2024-01-15_16-22-10.mkv`
+- `Rocket League_replay_2024-01-15_18-05-33.mkv`
+
+**Replay buffers** include `_replay` suffix:  
+`{GameName}_replay_{Timestamp}.mkv`
+
+**Clips** use custom names you provide during export.
+
+## Storage Best Practices
+
+<AccordionGroup>
+  <Accordion title="Optimize Storage Location">
+    **For best performance**:
+    - Store recordings on a **separate drive** from your OS/games
+    - Use an **SSD** if possible for faster writes (reduces stutter)
+    - Keep **20% free space** on the recording drive for optimal performance
+    
+    **Multi-drive setup**:
+    - OS/Games: SSD (C:)
+    - Recordings: HDD (D:) or secondary SSD
+    - Cache: SSD (C:) for fast metadata access
+  </Accordion>
+  
+  <Accordion title="Managing Disk Space">
+    **Automatic management**:
+    - Set a realistic storage limit based on available space
+    - Enable `discardSessionsWithoutBookmarks` to keep only meaningful sessions
+    - Use clip compression to reduce file sizes
+    
+    **Manual management**:
+    - Review recordings weekly and delete unwanted content
+    - Export highlights to long-term storage (external drive, cloud)
+    - Use lower quality presets for casual recordings
+  </Accordion>
+  
+  <Accordion title="Backup and Archive">
+    **Protect important recordings**:
+    - Copy clips and highlights to external storage
+    - Use cloud backup (OneDrive, Google Drive, etc.)
+    - Keep original high-quality files for content creation
+    - Compress older sessions to save space
+    
+    **Workflow**:
+    1. Record at high quality
+    2. Create clips from best moments
+    3. Export highlights
+    4. Back up clips/highlights to cloud
+    5. Delete or compress old sessions
+  </Accordion>
+</AccordionGroup>
+
+## Storage Statistics
+
+Segra tracks storage usage in real-time:
+
+<ParamField path="state.currentFolderSizeGb" type="number" readOnly>
+  Current total size of all recordings in GB.
+  
+  Updated whenever:
+  - A recording is saved
+  - A file is deleted
+  - A clip is exported
+  - Storage settings are changed
+</ParamField>
+
+View this in **Settings** > **Storage** section.
+
+## Network Storage
+
+Segra can use network drives (NAS, SMB shares):
+
+<Warning>
+**Important considerations**:
+- Network storage can introduce latency and cause dropped frames
+- Requires **reliable gigabit+ network connection**
+- Not recommended for high bitrate recordings (>50 Mbps)
+- Local SSD/HDD is always preferred
+</Warning>
+
+If using network storage:
+1. Map the network drive as a drive letter (e.g., Z:)
+2. Set content folder to `Z:/Segra` (or subdirectory)
+3. Test with low-bitrate recording first
+4. Monitor for dropped frames during recording
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Out of disk space errors">
+    **If Segra reports disk space issues**:
+    - Check free space: Open File Explorer, right-click drive, select Properties
+    - Increase storage limit in Settings
+    - Manually delete old recordings
+    - Move content folder to a larger drive
+    - Enable automatic cleanup options
+  </Accordion>
+  
+  <Accordion title="Cannot change content folder">
+    **Common causes**:
+    - Folder is write-protected or on a read-only drive
+    - Insufficient permissions (run Segra as administrator)
+    - Drive is full or nearly full
+    - Path contains invalid characters
+    
+    **Solutions**:
+    - Choose a different folder
+    - Check folder permissions
+    - Ensure target drive has free space
+  </Accordion>
+  
+  <Accordion title="Recordings not appearing">
+    **If recordings don't show in Segra**:
+    - Verify files exist in content folder (check Windows Explorer)
+    - Check metadata folder has corresponding .json files
+    - Click Settings > Storage > Browse > reselect the same folder (triggers rescan)
+    - Restart Segra
+    
+    Segra scans the content folder on startup and when settings change.
+  </Accordion>
+  
+  <Accordion title="Storage limit not working">
+    **If old files aren't being deleted**:
+    - Check current folder size vs. limit in Settings
+    - Ensure storage limit is enabled (value > 0)
+    - Manual deletion may be needed if limit was recently lowered
+    - Restart Segra to trigger cleanup check
+  </Accordion>
+</AccordionGroup>
+
+## Settings JSON Example
+
+```json
+{
+  "contentFolder": "D:/Recordings/Segra",
+  "cacheFolder": "C:/Users/YourName/AppData/Roaming/Segra",
+  "storageLimit": 200,
+  "removeOriginalAfterCompression": false,
+  "discardSessionsWithoutBookmarks": true,
+  "state": {
+    "currentFolderSizeGb": 87.45
+  }
+}
+```
+
+## External Storage and Cloud
+
+While Segra doesn't directly support cloud storage, you can:
+
+1. **Record locally** to fast SSD/HDD
+2. **Export clips** to a cloud-synced folder (OneDrive, Dropbox, etc.)
+3. **Backup sessions** manually to external drives
+4. **Use cloud backup** services to sync your content folder
+
+<Tip>
+For best results, record to local storage and use cloud services for backup and sharing clips, not live recording.
+</Tip>

@@ -1,0 +1,1163 @@
+---
+title: 'WebSocket API'
+description: 'Complete reference for the WebSocket message protocol between frontend and backend'
+---
+
+## Connection
+
+The WebSocket server runs on `ws://localhost:5000/` and accepts connections from the frontend.
+
+```typescript
+const socket = new WebSocket('ws://localhost:5000/');
+```
+
+<Note>
+  The backend only allows one active WebSocket connection. New connections automatically close previous ones.
+</Note>
+
+## Message Structure
+
+### Frontend to Backend
+
+Messages sent via `window.external.sendMessage()` use this JSON structure:
+
+```json
+{
+  "Method": "string",
+  "Parameters": {
+    // Method-specific parameters
+  }
+}
+```
+
+### Backend to Frontend
+
+Messages received via WebSocket use this JSON structure:
+
+```json
+{
+  "method": "string",
+  "content": {
+    // Event-specific data
+  }
+}
+```
+
+<Warning>
+  Note the casing difference: `Method` (capitalized) for frontend-to-backend, `method` (lowercase) for backend-to-frontend due to JSON serialization settings.
+</Warning>
+
+## Frontend to Backend Methods
+
+These commands can be sent from the frontend to control the backend.
+
+### Recording Control
+
+<ParamField path="StartRecording" type="method">
+  Starts a manual recording session.
+  
+  **Parameters:** None
+  
+  **Example:**
+  ```typescript
+  sendMessageToBackend('StartRecording');
+  ```
+</ParamField>
+
+<ParamField path="StopRecording" type="method">
+  Stops the current recording.
+  
+  **Parameters:** None
+  
+  **Example:**
+  ```typescript
+  sendMessageToBackend('StopRecording');
+  ```
+</ParamField>
+
+### Authentication
+
+<ParamField path="Login" type="method">
+  Authenticates the user with Supabase tokens.
+  
+  **Parameters:**
+  <ResponseField name="accessToken" type="string" required>
+    Supabase access token from the session
+  </ResponseField>
+  <ResponseField name="refreshToken" type="string" required>
+    Supabase refresh token for token renewal
+  </ResponseField>
+  
+  **Example:**
+  ```typescript
+  sendMessageToBackend('Login', {
+    accessToken: session.access_token,
+    refreshToken: session.refresh_token,
+  });
+  ```
+</ParamField>
+
+<ParamField path="Logout" type="method">
+  Signs out the current user.
+  
+  **Parameters:** None
+  
+  **Example:**
+  ```typescript
+  sendMessageToBackend('Logout');
+  ```
+</ParamField>
+
+### Clip Creation
+
+<ParamField path="CreateClip" type="method">
+  Creates clips from selected video segments.
+  
+  **Parameters:**
+  <ResponseField name="Selections" type="array" required>
+    Array of selection objects defining clip segments
+    
+    <ResponseField name="id" type="number" required>
+      Unique identifier for this selection
+    </ResponseField>
+    <ResponseField name="startTime" type="number" required>
+      Start timestamp in seconds
+    </ResponseField>
+    <ResponseField name="endTime" type="number" required>
+      End timestamp in seconds
+    </ResponseField>
+    <ResponseField name="fileName" type="string" required>
+      Source video file name
+    </ResponseField>
+    <ResponseField name="filePath" type="string">
+      Full path to source video
+    </ResponseField>
+    <ResponseField name="type" type="string" required>
+      Content type (e.g., "recording", "replay")
+    </ResponseField>
+    <ResponseField name="game" type="string" required>
+      Game name for organizing clips
+    </ResponseField>
+    <ResponseField name="title" type="string">
+      Optional title for the clip
+    </ResponseField>
+    <ResponseField name="igdbId" type="number">
+      IGDB game database ID
+    </ResponseField>
+  </ResponseField>
+  
+  **Example:**
+  ```typescript
+  sendMessageToBackend('CreateClip', {
+    Selections: [{
+      id: 1,
+      startTime: 30.5,
+      endTime: 45.2,
+      fileName: "gameplay_2024.mp4",
+      filePath: "C:/Videos/gameplay_2024.mp4",
+      type: "recording",
+      game: "Valorant",
+      title: "Epic Ace",
+      igdbId: 12345
+    }]
+  });
+  ```
+</ParamField>
+
+<ParamField path="CancelClip" type="method">
+  Cancels an in-progress clip operation.
+  
+  **Parameters:**
+  <ResponseField name="id" type="number" required>
+    The clip operation ID to cancel
+  </ResponseField>
+  
+  **Example:**
+  ```typescript
+  sendMessageToBackend('CancelClip', { id: 123 });
+  ```
+</ParamField>
+
+<ParamField path="CreateAiClip" type="method">
+  Creates AI-generated highlights from a video.
+  
+  **Parameters:**
+  <ResponseField name="FileName" type="string" required>
+    Video file name to process
+  </ResponseField>
+  
+  **Example:**
+  ```typescript
+  sendMessageToBackend('CreateAiClip', {
+    FileName: "gameplay_2024.mp4"
+  });
+  ```
+</ParamField>
+
+### Content Management
+
+<ParamField path="DeleteContent" type="method">
+  Deletes a single piece of content.
+  
+  **Parameters:**
+  <ResponseField name="FileName" type="string" required>
+    File name of the content to delete
+  </ResponseField>
+  <ResponseField name="ContentType" type="string" required>
+    Type of content ("Recording", "Clip", "Replay")
+  </ResponseField>
+  
+  **Example:**
+  ```typescript
+  sendMessageToBackend('DeleteContent', {
+    FileName: "clip_001.mp4",
+    ContentType: "Clip"
+  });
+  ```
+</ParamField>
+
+<ParamField path="DeleteMultipleContent" type="method">
+  Deletes multiple content items in a batch operation.
+  
+  **Parameters:**
+  <ResponseField name="Items" type="array" required>
+    Array of items to delete, each with FileName and ContentType
+  </ResponseField>
+  
+  **Example:**
+  ```typescript
+  sendMessageToBackend('DeleteMultipleContent', {
+    Items: [
+      { FileName: "clip_001.mp4", ContentType: "Clip" },
+      { FileName: "clip_002.mp4", ContentType: "Clip" }
+    ]
+  });
+  ```
+</ParamField>
+
+<ParamField path="RenameContent" type="method">
+  Renames a content file.
+  
+  **Parameters:** Handled by ContentService.HandleRenameContent
+  
+  **Example:**
+  ```typescript
+  sendMessageToBackend('RenameContent', {
+    // Parameters defined in ContentService
+  });
+  ```
+</ParamField>
+
+<ParamField path="ImportFile" type="method">
+  Imports an external video file into Segra.
+  
+  **Parameters:** Handled by ImportService.HandleImportFile
+  
+  **Example:**
+  ```typescript
+  sendMessageToBackend('ImportFile', {
+    // Parameters defined in ImportService
+  });
+  ```
+</ParamField>
+
+### Upload & Compression
+
+<ParamField path="UploadContent" type="method">
+  Uploads content to a platform (e.g., Segra.tv).
+  
+  **Parameters:** Handled by UploadService.HandleUploadContent
+  
+  **Example:**
+  ```typescript
+  sendMessageToBackend('UploadContent', {
+    // Parameters defined in UploadService
+  });
+  ```
+</ParamField>
+
+<ParamField path="CancelUpload" type="method">
+  Cancels an in-progress upload.
+  
+  **Parameters:**
+  <ResponseField name="fileName" type="string" required>
+    File name of the upload to cancel
+  </ResponseField>
+  
+  **Example:**
+  ```typescript
+  sendMessageToBackend('CancelUpload', {
+    fileName: "clip_001.mp4"
+  });
+  ```
+</ParamField>
+
+<ParamField path="CompressVideo" type="method">
+  Compresses a video to reduce file size.
+  
+  **Parameters:**
+  <ResponseField name="FilePath" type="string" required>
+    Full path to the video file
+  </ResponseField>
+  
+  **Example:**
+  ```typescript
+  sendMessageToBackend('CompressVideo', {
+    FilePath: "C:/Videos/large_file.mp4"
+  });
+  ```
+</ParamField>
+
+### Bookmarks
+
+<ParamField path="AddBookmark" type="method">
+  Adds a bookmark during recording or playback.
+  
+  **Parameters:** Handled by ContentService.HandleAddBookmark
+  
+  **Example:**
+  ```typescript
+  sendMessageToBackend('AddBookmark', {
+    // Parameters defined in ContentService
+  });
+  ```
+</ParamField>
+
+<ParamField path="DeleteBookmark" type="method">
+  Removes a bookmark.
+  
+  **Parameters:** Handled by ContentService.HandleDeleteBookmark
+  
+  **Example:**
+  ```typescript
+  sendMessageToBackend('DeleteBookmark', {
+    // Parameters defined in ContentService
+  });
+  ```
+</ParamField>
+
+### Settings
+
+<ParamField path="UpdateSettings" type="method">
+  Updates application settings.
+  
+  **Parameters:** Handled by SettingsService.HandleUpdateSettings
+  
+  **Example:**
+  ```typescript
+  sendMessageToBackend('UpdateSettings', {
+    // Settings object with changed values
+  });
+  ```
+</ParamField>
+
+<ParamField path="SetVideoLocation" type="method">
+  Opens a folder picker to change the video storage location.
+  
+  **Parameters:** None
+  
+  **Example:**
+  ```typescript
+  sendMessageToBackend('SetVideoLocation');
+  ```
+</ParamField>
+
+<ParamField path="SetCacheLocation" type="method">
+  Opens a folder picker to change the cache storage location.
+  
+  **Parameters:** None
+  
+  **Example:**
+  ```typescript
+  sendMessageToBackend('SetCacheLocation');
+  ```
+</ParamField>
+
+<ParamField path="ApplyVideoPreset" type="method">
+  Applies a video quality preset.
+  
+  **Parameters:**
+  <ResponseField name="preset" type="string" required>
+    Name of the preset (e.g., "1080p60", "4k60")
+  </ResponseField>
+  
+  **Example:**
+  ```typescript
+  sendMessageToBackend('ApplyVideoPreset', {
+    preset: "1080p60"
+  });
+  ```
+</ParamField>
+
+<ParamField path="ApplyClipPreset" type="method">
+  Applies a clip quality preset.
+  
+  **Parameters:**
+  <ResponseField name="preset" type="string" required>
+    Name of the preset
+  </ResponseField>
+  
+  **Example:**
+  ```typescript
+  sendMessageToBackend('ApplyClipPreset', {
+    preset: "high_quality"
+  });
+  ```
+</ParamField>
+
+### Game Management
+
+<ParamField path="AddToWhitelist" type="method">
+  Adds a game to the recording whitelist.
+  
+  **Parameters:**
+  <ResponseField name="game" type="object" required>
+    Game object with name and paths
+    
+    <ResponseField name="Name" type="string" required>
+      Game name
+    </ResponseField>
+    <ResponseField name="Paths" type="array" required>
+      Array of executable paths
+    </ResponseField>
+  </ResponseField>
+  
+  **Example:**
+  ```typescript
+  sendMessageToBackend('AddToWhitelist', {
+    game: {
+      Name: "Valorant",
+      Paths: ["C:/Games/Valorant/VALORANT.exe"]
+    }
+  });
+  ```
+</ParamField>
+
+<ParamField path="RemoveFromWhitelist" type="method">
+  Removes a game from the whitelist.
+  
+  **Parameters:**
+  <ResponseField name="game" type="object" required>
+    Game object matching the one to remove
+  </ResponseField>
+</ParamField>
+
+<ParamField path="AddToBlacklist" type="method">
+  Adds a game to the recording blacklist.
+  
+  **Parameters:**
+  <ResponseField name="game" type="object" required>
+    Game object with name and paths
+  </ResponseField>
+</ParamField>
+
+<ParamField path="RemoveFromBlacklist" type="method">
+  Removes a game from the blacklist.
+  
+  **Parameters:**
+  <ResponseField name="game" type="object" required>
+    Game object matching the one to remove
+  </ResponseField>
+</ParamField>
+
+<ParamField path="MoveGame" type="method">
+  Moves a game between whitelist and blacklist.
+  
+  **Parameters:**
+  <ResponseField name="game" type="object" required>
+    Game object to move
+  </ResponseField>
+  <ResponseField name="targetList" type="string" required>
+    Target list: "whitelist" or "blacklist"
+  </ResponseField>
+  
+  **Example:**
+  ```typescript
+  sendMessageToBackend('MoveGame', {
+    game: { Name: "GameName", Paths: [...] },
+    targetList: "blacklist"
+  });
+  ```
+</ParamField>
+
+<ParamField path="SelectGameExecutable" type="method">
+  Opens a file picker to select a game executable.
+  
+  **Parameters:** None
+  
+  **Response:** Backend sends `SelectedGameExecutable` message with the selected file
+  
+  **Example:**
+  ```typescript
+  sendMessageToBackend('SelectGameExecutable');
+  ```
+</ParamField>
+
+### System Actions
+
+<ParamField path="OpenFileLocation" type="method">
+  Opens Windows Explorer to the file location.
+  
+  **Parameters:**
+  <ResponseField name="FilePath" type="string" required>
+    Full path to the file
+  </ResponseField>
+  
+  **Example:**
+  ```typescript
+  sendMessageToBackend('OpenFileLocation', {
+    FilePath: "C:/Videos/clip.mp4"
+  });
+  ```
+</ParamField>
+
+<ParamField path="OpenInBrowser" type="method">
+  Opens a URL in the default browser.
+  
+  **Parameters:**
+  <ResponseField name="Url" type="string" required>
+    URL to open
+  </ResponseField>
+  
+  **Example:**
+  ```typescript
+  sendMessageToBackend('OpenInBrowser', {
+    Url: "https://segra.tv"
+  });
+  ```
+</ParamField>
+
+<ParamField path="OpenLogsLocation" type="method">
+  Opens Windows Explorer to the logs folder.
+  
+  **Parameters:** None
+  
+  **Example:**
+  ```typescript
+  sendMessageToBackend('OpenLogsLocation');
+  ```
+</ParamField>
+
+<ParamField path="ToggleFullscreen" type="method">
+  Toggles fullscreen mode.
+  
+  **Parameters:**
+  <ResponseField name="enabled" type="boolean" required>
+    True to enable fullscreen, false to disable
+  </ResponseField>
+  
+  **Example:**
+  ```typescript
+  sendMessageToBackend('ToggleFullscreen', {
+    enabled: true
+  });
+  ```
+</ParamField>
+
+### Updates
+
+<ParamField path="CheckForUpdates" type="method">
+  Checks for available application updates.
+  
+  **Parameters:** None
+  
+  **Example:**
+  ```typescript
+  sendMessageToBackend('CheckForUpdates');
+  ```
+</ParamField>
+
+<ParamField path="ApplyUpdate" type="method">
+  Applies a downloaded update and restarts the application.
+  
+  **Parameters:** None
+  
+  **Example:**
+  ```typescript
+  sendMessageToBackend('ApplyUpdate');
+  ```
+</ParamField>
+
+### Connection
+
+<ParamField path="NewConnection" type="method">
+  Signals that a new WebSocket connection has been established. The backend responds with initial state.
+  
+  **Parameters:** None
+  
+  **Response:** Backend sends:
+  - `Settings` with current application state
+  - `GameList` with available games
+  - `AppVersion` with backend version
+  
+  **Example:**
+  ```typescript
+  sendMessageToBackend('NewConnection');
+  ```
+</ParamField>
+
+### Storage & Recovery
+
+<ParamField path="StorageWarningConfirm" type="method">
+  Confirms or cancels a storage warning action.
+  
+  **Parameters:** Handled by StorageWarningService.HandleStorageWarningConfirm
+</ParamField>
+
+<ParamField path="RecoveryConfirm" type="method">
+  Confirms recovery of temporary files after a crash.
+  
+  **Parameters:** Handled by RecoveryService.HandleRecoveryConfirm
+</ParamField>
+
+---
+
+## Backend to Frontend Events
+
+These messages are sent from the backend to update the frontend state.
+
+### State Updates
+
+<ResponseField name="Settings" type="event">
+  Sends the complete application state to the frontend.
+  
+  **Content:**
+  <ResponseField name="settings" type="object">
+    Complete Settings.Instance object containing all application state
+  </ResponseField>
+  
+  **Example:**
+  ```json
+  {
+    "method": "Settings",
+    "content": {
+      "contentFolder": "C:/Videos",
+      "cacheFolder": "C:/AppData/Segra",
+      "state": {
+        "recording": null,
+        "content": [...],
+        // ... full state object
+      }
+    }
+  }
+  ```
+</ResponseField>
+
+<ResponseField name="GameList" type="event">
+  Sends the list of detected games.
+  
+  **Content:**
+  <ResponseField name="games" type="array">
+    Array of game objects with names and executable paths
+  </ResponseField>
+  
+  **Example:**
+  ```json
+  {
+    "method": "GameList",
+    "content": [
+      {
+        "name": "Valorant",
+        "paths": ["C:/Games/Valorant/VALORANT.exe"],
+        "igdbId": 12345
+      }
+    ]
+  }
+  ```
+</ResponseField>
+
+<ResponseField name="AppVersion" type="event">
+  Sends the backend application version for version mismatch detection.
+  
+  **Content:**
+  <ResponseField name="version" type="string">
+    Semantic version string (e.g., "1.2.3")
+  </ResponseField>
+  
+  **Example:**
+  ```json
+  {
+    "method": "AppVersion",
+    "content": {
+      "version": "1.2.3"
+    }
+  }
+  ```
+  
+  <Note>
+    Frontend automatically reloads if this doesn't match `__APP_VERSION__`
+  </Note>
+</ResponseField>
+
+### Progress Events
+
+<ResponseField name="ClipProgress" type="event">
+  Reports progress of clip creation operations.
+  
+  **Content:**
+  <ResponseField name="id" type="number" required>
+    Clip operation ID
+  </ResponseField>
+  <ResponseField name="progress" type="number" required>
+    Progress percentage (0-100), or -1 for error
+  </ResponseField>
+  <ResponseField name="selections" type="array" required>
+    Array of selections being processed
+  </ResponseField>
+  <ResponseField name="error" type="string">
+    Error message if progress is -1
+  </ResponseField>
+  
+  **Example:**
+  ```json
+  {
+    "method": "ClipProgress",
+    "content": {
+      "id": 123456,
+      "progress": 45,
+      "selections": [...]
+    }
+  }
+  ```
+</ResponseField>
+
+<ResponseField name="UploadProgress" type="event">
+  Reports progress of upload operations.
+  
+  **Content:**
+  <ResponseField name="fileName" type="string" required>
+    File being uploaded
+  </ResponseField>
+  <ResponseField name="progress" type="number" required>
+    Progress percentage (0-100), or -1 for error
+  </ResponseField>
+  <ResponseField name="status" type="string" required>
+    Upload status: "uploading", "processing", "done", or "error"
+  </ResponseField>
+  <ResponseField name="message" type="string">
+    Status message or error description
+  </ResponseField>
+  
+  **Example:**
+  ```json
+  {
+    "method": "UploadProgress",
+    "content": {
+      "fileName": "clip_001.mp4",
+      "progress": 75,
+      "status": "uploading",
+      "message": "Uploading to server..."
+    }
+  }
+  ```
+</ResponseField>
+
+<ResponseField name="ImportProgress" type="event">
+  Reports progress of file import operations.
+  
+  **Content:**
+  <ResponseField name="id" type="string" required>
+    Import operation ID
+  </ResponseField>
+  <ResponseField name="fileName" type="string" required>
+    Current file being imported
+  </ResponseField>
+  <ResponseField name="progress" type="number" required>
+    Progress percentage for current file
+  </ResponseField>
+  <ResponseField name="status" type="string" required>
+    Import status: "importing", "done", or "error"
+  </ResponseField>
+  <ResponseField name="totalFiles" type="number" required>
+    Total number of files to import
+  </ResponseField>
+  <ResponseField name="currentFileIndex" type="number" required>
+    Index of current file (0-based)
+  </ResponseField>
+  <ResponseField name="message" type="string">
+    Status message
+  </ResponseField>
+</ResponseField>
+
+<ResponseField name="CompressionProgress" type="event">
+  Reports progress of video compression.
+  
+  **Content:**
+  <ResponseField name="filePath" type="string" required>
+    File being compressed
+  </ResponseField>
+  <ResponseField name="progress" type="number" required>
+    Progress percentage (0-100), or -1 for error
+  </ResponseField>
+  <ResponseField name="status" type="string" required>
+    Status: "compressing", "done", "skipped", or "error"
+  </ResponseField>
+  <ResponseField name="message" type="string">
+    Status message
+  </ResponseField>
+  
+  **Example:**
+  ```json
+  {
+    "method": "CompressionProgress",
+    "content": {
+      "filePath": "C:/Videos/large.mp4",
+      "progress": 50,
+      "status": "compressing"
+    }
+  }
+  ```
+</ResponseField>
+
+<ResponseField name="UpdateProgress" type="event">
+  Reports progress of application updates.
+  
+  **Content:**
+  <ResponseField name="version" type="string" required>
+    Version being downloaded
+  </ResponseField>
+  <ResponseField name="progress" type="number" required>
+    Download progress (0-100)
+  </ResponseField>
+  <ResponseField name="status" type="string" required>
+    Status: "downloading", "downloaded", "ready", or "error"
+  </ResponseField>
+  <ResponseField name="message" type="string" required>
+    Human-readable status message
+  </ResponseField>
+</ResponseField>
+
+<ResponseField name="AiProgress" type="event">
+  Reports progress of AI highlight generation.
+  
+  **Content:** Handled by AiService
+</ResponseField>
+
+<ResponseField name="MigrationStatus" type="event">
+  Reports status of data migration operations.
+  
+  **Content:**
+  <ResponseField name="isRunning" type="boolean" required>
+    Whether migration is currently running
+  </ResponseField>
+  <ResponseField name="currentMigration" type="string">
+    Description of current migration
+  </ResponseField>
+</ResponseField>
+
+### User Notifications
+
+<ResponseField name="ShowModal" type="event">
+  Displays a modal dialog to the user.
+  
+  **Content:**
+  <ResponseField name="title" type="string" required>
+    Modal title
+  </ResponseField>
+  <ResponseField name="subtitle" type="string">
+    Optional subtitle
+  </ResponseField>
+  <ResponseField name="description" type="string" required>
+    Modal body text
+  </ResponseField>
+  <ResponseField name="type" type="string" required>
+    Modal type: "info", "warning", or "error"
+  </ResponseField>
+  
+  **Example:**
+  ```json
+  {
+    "method": "ShowModal",
+    "content": {
+      "title": "Error",
+      "description": "Failed to start recording",
+      "type": "error"
+    }
+  }
+  ```
+</ResponseField>
+
+<ResponseField name="StorageWarning" type="event">
+  Warns user about storage space issues and requests confirmation.
+  
+  **Content:**
+  <ResponseField name="warningId" type="string" required>
+    Unique ID for this warning
+  </ResponseField>
+  <ResponseField name="title" type="string" required>
+    Warning title
+  </ResponseField>
+  <ResponseField name="description" type="string" required>
+    Warning description
+  </ResponseField>
+  <ResponseField name="confirmText" type="string" required>
+    Text for confirm button
+  </ResponseField>
+  <ResponseField name="cancelText" type="string" required>
+    Text for cancel button
+  </ResponseField>
+  <ResponseField name="action" type="string" required>
+    Action to perform if confirmed
+  </ResponseField>
+  <ResponseField name="actionData" type="any" required>
+    Data needed to perform the action
+  </ResponseField>
+</ResponseField>
+
+<ResponseField name="RecoveryPrompt" type="event">
+  Prompts user to recover files after a crash.
+  
+  **Content:**
+  <ResponseField name="files" type="array" required>
+    Array of recoverable file objects
+  </ResponseField>
+  <ResponseField name="totalCount" type="number" required>
+    Total number of files that can be recovered
+  </ResponseField>
+</ResponseField>
+
+<ResponseField name="BookmarkCreated" type="event">
+  Notifies that a bookmark was created (typically from a keybind).
+  
+  **Content:** Empty object
+  
+  **Example:**
+  ```json
+  {
+    "method": "BookmarkCreated",
+    "content": {}
+  }
+  ```
+</ResponseField>
+
+### UI Events
+
+<ResponseField name="SelectedGameExecutable" type="event">
+  Returns the game executable selected by the user.
+  
+  **Content:**
+  <ResponseField name="name" type="string" required>
+    Game name (derived from executable name)
+  </ResponseField>
+  <ResponseField name="paths" type="array" required>
+    Array containing the selected executable path
+  </ResponseField>
+  
+  **Example:**
+  ```json
+  {
+    "method": "SelectedGameExecutable",
+    "content": {
+      "name": "MyGame",
+      "paths": ["C:/Games/MyGame/game.exe"]
+    }
+  }
+  ```
+</ResponseField>
+
+<ResponseField name="ReleaseNotes" type="event">
+  Sends release notes for available versions.
+  
+  **Content:**
+  <ResponseField name="releaseNotesList" type="array" required>
+    Array of release note objects
+    
+    <ResponseField name="version" type="string" required>
+      Version number
+    </ResponseField>
+    <ResponseField name="base64Markdown" type="string" required>
+      Release notes in base64-encoded markdown
+    </ResponseField>
+    <ResponseField name="releaseDate" type="string" required>
+      ISO 8601 date string
+    </ResponseField>
+  </ResponseField>
+</ResponseField>
+
+<ResponseField name="ShowReleaseNotes" type="event">
+  Triggers the frontend to display release notes.
+  
+  **Content:** Version string to show notes for
+</ResponseField>
+
+<ResponseField name="ObsDownloadProgress" type="event">
+  Reports OBS download progress during first-time setup.
+  
+  **Content:**
+  <ResponseField name="progress" type="number" required>
+    Download progress (0-100)
+  </ResponseField>
+  <ResponseField name="status" type="string" required>
+    Download status: "downloading"
+  </ResponseField>
+</ResponseField>
+
+### Heartbeat
+
+<ResponseField name="pong" type="event">
+  Response to ping heartbeat message.
+  
+  **Content:** Empty object
+  
+  **Example:**
+  ```json
+  {
+    "method": "pong",
+    "content": {}
+  }
+  ```
+</ResponseField>
+
+## Error Handling
+
+### Frontend Validation
+
+Always check if the backend connection is available before sending messages:
+
+```typescript
+if ((window as any).external && typeof (window as any).external.sendMessage === 'function') {
+  sendMessageToBackend('StartRecording');
+} else {
+  console.error('Backend connection not available');
+}
+```
+
+### Backend Error Responses
+
+When operations fail, the backend typically:
+
+1. Logs the error with Serilog
+2. Sends a progress event with `progress: -1` and an `error` field
+3. Optionally shows a `ShowModal` message to the user
+
+**Example error response:**
+```json
+{
+  "method": "ClipProgress",
+  "content": {
+    "id": 123456,
+    "progress": -1,
+    "selections": [...],
+    "error": "FFmpeg not found. Please reinstall Segra."
+  }
+}
+```
+
+### Connection Failures
+
+The WebSocket automatically reconnects if the connection drops:
+
+- **Reconnect attempts:** Infinite
+- **Reconnect interval:** 3 seconds
+- **Heartbeat timeout:** 30 seconds
+
+When reconnected, the backend re-sends the full state:
+
+```typescript
+onOpen: () => {
+  console.log('WebSocket reconnected - resyncing state');
+  sendMessageToBackend('NewConnection');
+}
+```
+
+## Best Practices
+
+<CardGroup cols={2}>
+  <Card title="Use TypeScript Types" icon="shield">
+    Import message type definitions from `Models/WebSocketMessages.ts` for type safety.
+  </Card>
+  
+  <Card title="Handle All States" icon="list-check">
+    Progress events can be: in-progress (0-100), complete (100), or error (-1). Handle all cases.
+  </Card>
+  
+  <Card title="Listen to Events" icon="ear-listen">
+    Use `window.addEventListener('websocket-message')` to react to backend events globally.
+  </Card>
+  
+  <Card title="Graceful Degradation" icon="triangle-exclamation">
+    Always check if `window.external.sendMessage` exists before calling it.
+  </Card>
+</CardGroup>
+
+<Warning>
+  Never assume the WebSocket is connected. Use the `isConnected` state from `useWebSocketContext()` to check connection status.
+</Warning>
+
+## Example: Complete Clip Workflow
+
+Here's a complete example showing the clip creation workflow:
+
+```typescript
+import { sendMessageToBackend } from '../Utils/MessageUtils';
+import { useEffect, useState } from 'react';
+
+function ClipCreator() {
+  const [progress, setProgress] = useState(0);
+  const [clipId, setClipId] = useState<number | null>(null);
+
+  // Listen for progress updates
+  useEffect(() => {
+    const handleMessage = (event: CustomEvent) => {
+      const { method, content } = event.detail;
+      
+      if (method === 'ClipProgress') {
+        if (content.id === clipId) {
+          if (content.progress === -1) {
+            console.error('Clip failed:', content.error);
+          } else if (content.progress === 100) {
+            console.log('Clip complete!');
+          } else {
+            setProgress(content.progress);
+          }
+        }
+      }
+    };
+
+    window.addEventListener('websocket-message', handleMessage as EventListener);
+    return () => window.removeEventListener('websocket-message', handleMessage as EventListener);
+  }, [clipId]);
+
+  const createClip = () => {
+    const id = Math.floor(Math.random() * 1000000);
+    setClipId(id);
+    
+    sendMessageToBackend('CreateClip', {
+      Selections: [{
+        id: id,
+        startTime: 10,
+        endTime: 20,
+        fileName: 'gameplay.mp4',
+        type: 'recording',
+        game: 'Valorant',
+        title: 'Epic Play'
+      }]
+    });
+  };
+
+  const cancelClip = () => {
+    if (clipId) {
+      sendMessageToBackend('CancelClip', { id: clipId });
+    }
+  };
+
+  return (
+    <div>
+      <button onClick={createClip}>Create Clip</button>
+      <button onClick={cancelClip}>Cancel</button>
+      <progress value={progress} max={100} />
+    </div>
+  );
+}
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="API Overview" icon="book" href="/api/overview">
+    Learn about the internal architecture
+  </Card>
+  <Card title="Core Services" icon="code" href="/api/recording-service">
+    Browse backend service documentation
+  </Card>
+</CardGroup>

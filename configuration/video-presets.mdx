@@ -1,0 +1,449 @@
+---
+title: Video Presets
+description: Configure recording quality, resolution, framerate, and encoding settings in Segra
+---
+
+Segra offers quality presets for quick configuration, plus custom settings for advanced users. Choose the right balance of quality, performance, and file size for your needs.
+
+## Quality Presets
+
+Quick configuration options for both recordings and clips.
+
+### Recording Presets
+
+<Tabs>
+  <Tab title="Low Quality">
+    **Resolution**: 720p  
+    **Framerate**: 30 fps  
+    **Best for**: Older hardware, testing, or minimal file sizes
+    
+    Use when you need Segra to have minimal performance impact or when disk space is very limited.
+  </Tab>
+  
+  <Tab title="Standard">
+    **Resolution**: 1080p  
+    **Framerate**: 60 fps  
+    **Best for**: Most users, balanced quality and performance
+    
+    Recommended default for modern gaming PCs. Provides excellent quality without excessive file sizes.
+  </Tab>
+  
+  <Tab title="High Quality">
+    **Resolution**: 1440p or 1080p (based on display)  
+    **Framerate**: 60 fps  
+    **Best for**: High-end systems, archival recordings
+    
+    Automatically uses 1440p if your monitor supports it, otherwise 1080p. Best quality for review and content creation.
+  </Tab>
+  
+  <Tab title="Custom">
+    **Manual configuration**  
+    **Best for**: Advanced users who want complete control
+    
+    Exposes all encoding parameters for fine-tuned optimization.
+  </Tab>
+</Tabs>
+
+### Clip Presets
+
+Separate quality settings for exported clips:
+
+<Tabs>
+  <Tab title="Low Quality">
+    **Settings**: Fast encoding, 30 fps  
+    **Best for**: Quick sharing, social media stories
+    
+    Fast exports with smaller file sizes, suitable for casual sharing.
+  </Tab>
+  
+  <Tab title="Standard">
+    **Settings**: Balanced encoding, 60 fps  
+    **Best for**: Most clip exports, YouTube uploads
+    
+    Good quality with reasonable export times and file sizes.
+  </Tab>
+  
+  <Tab title="High Quality">
+    **Settings**: Quality-focused encoding, 60 fps  
+    **Best for**: Archival clips, professional content
+    
+    Best possible quality for clips, longer export times.
+  </Tab>
+  
+  <Tab title="Custom">
+    **Manual configuration**  
+    **Best for**: Specific quality or compatibility requirements
+    
+    Full control over codec, preset, quality, and FPS.
+  </Tab>
+</Tabs>
+
+## Custom Video Settings
+
+When using the Custom preset, configure these parameters:
+
+### Resolution
+
+<ParamField path="resolution" type="enum" default="1440p">
+  Output resolution for recordings:
+  - `720p`: 1280×720
+  - `1080p`: 1920×1080
+  - `1440p`: 2560×1440 (requires 1440p+ display)
+  - `4K`: 3840×2160 (requires 4K display)
+  
+  <Note>
+  Higher resolutions are only available if your monitor supports them. Segra automatically limits options based on your display's maximum resolution.
+  </Note>
+</ParamField>
+
+### Framerate
+
+<ParamField path="frameRate" type="integer" default="60">
+  Frames per second to record:
+  - `24`: Cinematic look
+  - `30`: Standard definition
+  - `60`: Smooth gameplay (recommended)
+  - `120`: High refresh rate displays
+  - `144`: For 144Hz+ monitors
+  
+  <Warning>
+  Higher framerates increase file size and CPU/GPU load. Match your game's framerate for best results.
+  </Warning>
+</ParamField>
+
+### Encoder
+
+<ParamField path="encoder" type="enum" default="gpu">
+  Hardware to use for video encoding:
+  - `gpu`: Hardware encoding (NVIDIA NVENC, AMD VCE, Intel Quick Sync)
+  - `cpu`: Software encoding (x264/x265)
+  
+  **GPU Encoding**:
+  - Faster, lower CPU usage
+  - Minimal performance impact while gaming
+  - Recommended for most users
+  
+  **CPU Encoding**:
+  - Higher quality at same bitrate
+  - More CPU intensive
+  - Best for systems with powerful CPUs and no GPU encoder
+</ParamField>
+
+### Codec
+
+<ParamField path="codec" type="object" default="auto">
+  Video codec to use for encoding. Available codecs depend on your hardware:
+  
+  **NVIDIA GPUs**:
+  - NVIDIA NVENC H.264 (most compatible)
+  - NVIDIA NVENC H.265/HEVC (better compression)
+  - NVIDIA NVENC AV1 (newest, best compression, RTX 40-series only)
+  
+  **AMD GPUs**:
+  - AMD VCE H.264
+  - AMD VCE H.265/HEVC
+  
+  **Intel GPUs**:
+  - Intel Quick Sync H.264
+  - Intel Quick Sync H.265/HEVC
+  
+  **CPU**:
+  - x264 (H.264 software encoder)
+  - x265 (H.265/HEVC software encoder)
+  
+  Segra automatically selects the best codec when you change encoders.
+</ParamField>
+
+## Rate Control Methods
+
+Control how the encoder manages bitrate and quality:
+
+### CBR (Constant Bitrate)
+
+<ParamField path="rateControl" type="enum" value="CBR">
+  Maintains a constant bitrate throughout the recording.
+  
+  **When to use**:
+  - Streaming or uploading to platforms with bitrate limits
+  - Predictable file sizes
+  - Consistent quality
+  
+  **Settings**:
+</ParamField>
+
+<ParamField path="bitrate" type="integer" default="70">
+  Target bitrate in Mbps (10-100+)
+  
+  **Recommended values**:
+  - 720p/30fps: 10-15 Mbps
+  - 1080p/60fps: 30-50 Mbps
+  - 1440p/60fps: 50-80 Mbps
+  - 4K/60fps: 80-130 Mbps
+</ParamField>
+
+### VBR (Variable Bitrate)
+
+<ParamField path="rateControl" type="enum" value="VBR">
+  Varies bitrate based on scene complexity.
+  
+  **When to use**:
+  - Best quality-to-size ratio
+  - Local storage (not streaming)
+  - Most efficient for archival
+  
+  **Settings**:
+</ParamField>
+
+<ParamField path="minBitrate" type="integer" default="70">
+  Minimum bitrate in Mbps (simple scenes use lower bitrate)
+</ParamField>
+
+<ParamField path="maxBitrate" type="integer" default="100">
+  Maximum bitrate in Mbps (complex scenes use higher bitrate)
+</ParamField>
+
+### CRF (Constant Rate Factor) - CPU Only
+
+<ParamField path="rateControl" type="enum" value="CRF">
+  Quality-based encoding (lower CRF = higher quality).
+  
+  **When to use**:
+  - Best quality for file size
+  - CPU encoding only
+  - Archival or content creation
+  
+  **Settings**:
+</ParamField>
+
+<ParamField path="crfValue" type="integer" default="23">
+  Quality level (0-51):
+  - `17-18`: Very high quality (large files)
+  - `21-23`: High quality (recommended)
+  - `24-26`: Good quality (balanced)
+  - `27-28`: Lower quality (smaller files)
+  
+  <Tip>
+  23 is considered visually lossless for most content. Lower values increase quality and file size.
+  </Tip>
+</ParamField>
+
+### CQP/CQ (Constant Quantization) - GPU Only
+
+<ParamField path="rateControl" type="enum" value="CQP">
+  GPU equivalent of CRF (lower = higher quality).
+  
+  **When to use**:
+  - GPU encoding with quality priority
+  - Similar to CRF but for hardware encoders
+  
+  **Settings**:
+</ParamField>
+
+<ParamField path="cqLevel" type="integer" default="20">
+  Quality level (0-51):
+  - `0-15`: Very high quality
+  - `16-20`: High quality (recommended)
+  - `21-25`: Good quality
+  - `26-30`: Lower quality
+</ParamField>
+
+## Advanced Settings
+
+### 4:3 Aspect Ratio Handling
+
+<ParamField path="stretch4By3" type="boolean" default="true">
+  Automatically stretch 4:3 content to 16:9.
+  
+  Enable for older games that run in 4:3 to avoid black bars.
+</ParamField>
+
+### Encoder Presets
+
+Presets control encoding speed vs. quality tradeoff.
+
+#### CPU Presets (x264/x265)
+
+<ParamField path="clipPreset" type="enum" default="veryfast">
+  Speed/quality tradeoff for CPU encoding:
+  - `ultrafast`: Fastest, lowest quality
+  - `superfast`, `veryfast`: Fast, good for real-time
+  - `faster`, `fast`: Balanced
+  - `medium`: Good quality, slower
+  - `slow`, `slower`, `veryslow`: Best quality, very slow
+  
+  For live recording, use `veryfast` or faster. For clip exports, `medium` or `slow` work well.
+</ParamField>
+
+#### GPU Presets
+
+Presets vary by GPU vendor:
+
+**NVIDIA NVENC (H.264/HEVC)**:
+- `slow`: Best quality
+- `medium`: Balanced
+- `fast`: Better performance
+- `hp`: High performance
+- `hq`: High quality
+- `ll`: Low latency
+- `llhq`: Low latency high quality
+
+**NVIDIA AV1**:
+- `p1`: Fastest
+- `p4`: Balanced (recommended)
+- `p7`: Slowest, best quality
+
+**AMD VCE**:
+- `quality`: Best quality
+- `transcoding`: Balanced
+- `lowlatency`: Faster
+- `ultralowlatency`: Fastest
+
+**Intel Quick Sync**:
+- `slow`: Best quality
+- `medium`: Balanced
+- `fast`: Better performance
+
+## Clip Export Settings
+
+Separate settings for exporting clips:
+
+<ParamField path="clipEncoder" type="enum" default="cpu">
+  Encoder for clip exports (can differ from recording encoder)
+  - `cpu`: Better quality, slower exports
+  - `gpu`: Faster exports, uses GPU
+</ParamField>
+
+<ParamField path="clipCodec" type="enum" default="h264">
+  Codec for exported clips:
+  - `h264`: Maximum compatibility
+  - `h265`: Better compression (larger compatibility)
+  - `av1`: Best compression (limited compatibility)
+</ParamField>
+
+<ParamField path="clipFps" type="integer" default="60">
+  Framerate for clips:
+  - `0`: Use original framerate
+  - `30`, `60`: Fixed framerate
+</ParamField>
+
+<ParamField path="clipAudioQuality" type="enum" default="128k">
+  Audio bitrate for clips:
+  - `96k`: Lower quality, smaller files
+  - `128k`: Standard quality (recommended)
+  - `192k`, `256k`, `320k`: Higher quality
+</ParamField>
+
+<ParamField path="clipQualityCpu" type="integer" default="23">
+  CRF value for CPU-encoded clips (17-28, lower = better)
+</ParamField>
+
+<ParamField path="clipQualityGpu" type="integer" default="23">
+  CQ value for GPU-encoded clips (0-51, lower = better)
+</ParamField>
+
+## Settings JSON Examples
+
+### High Quality GPU Recording
+```json
+{
+  "videoQualityPreset": "custom",
+  "resolution": "1440p",
+  "frameRate": 60,
+  "encoder": "gpu",
+  "codec": {
+    "friendlyName": "NVIDIA NVENC H.264",
+    "internalEncoderId": "jim_nvenc",
+    "isHardwareEncoder": true
+  },
+  "rateControl": "VBR",
+  "minBitrate": 60,
+  "maxBitrate": 90
+}
+```
+
+### CPU Quality Recording
+```json
+{
+  "videoQualityPreset": "custom",
+  "resolution": "1080p",
+  "frameRate": 60,
+  "encoder": "cpu",
+  "rateControl": "CRF",
+  "crfValue": 20
+}
+```
+
+### Fast Clip Export
+```json
+{
+  "clipQualityPreset": "custom",
+  "clipEncoder": "gpu",
+  "clipCodec": "h264",
+  "clipFps": 60,
+  "clipQualityGpu": 20,
+  "clipPreset": "fast",
+  "clipAudioQuality": "128k"
+}
+```
+
+## Performance vs Quality Guide
+
+<Tabs>
+  <Tab title="Maximum Performance">
+    Minimal impact on gaming performance:
+    - Encoder: GPU
+    - Resolution: 720p or 1080p
+    - Framerate: 30 or 60 fps
+    - Rate Control: VBR or CQP
+    - Preset: Fast/HP (GPU)
+  </Tab>
+  
+  <Tab title="Balanced">
+    Good quality with reasonable performance:
+    - Encoder: GPU
+    - Resolution: 1080p
+    - Framerate: 60 fps
+    - Rate Control: VBR
+    - Bitrate: 40-60 Mbps
+    - Preset: Medium/HQ (GPU)
+  </Tab>
+  
+  <Tab title="Maximum Quality">
+    Best quality for archival/content creation:
+    - Encoder: CPU (if powerful) or GPU
+    - Resolution: 1440p or 4K
+    - Framerate: 60+ fps
+    - Rate Control: CRF (18-20) or VBR (high bitrate)
+    - Preset: Slow/Slower (CPU) or HQ (GPU)
+  </Tab>
+</Tabs>
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Encoder not available">
+    If a codec/encoder isn't listed:
+    - **GPU encoders**: Update graphics drivers
+    - **NVENC**: Requires NVIDIA GTX 600-series or newer
+    - **AMD VCE**: Requires AMD Radeon HD 7000-series or newer
+    - **Quick Sync**: Requires Intel CPU with integrated graphics
+    - Restart Segra after driver updates
+  </Accordion>
+  
+  <Accordion title="Performance issues while recording">
+    - Switch to GPU encoder
+    - Lower resolution (1080p → 720p)
+    - Reduce framerate (60 → 30 fps)
+    - Use faster preset (Medium → Fast)
+    - Close other applications
+    - Check GPU/CPU usage in Task Manager
+  </Accordion>
+  
+  <Accordion title="Large file sizes">
+    - Use VBR instead of CBR
+    - Lower bitrate (try 30-50 Mbps for 1080p)
+    - Use H.265/HEVC codec (better compression)
+    - Reduce resolution or framerate
+    - Enable compression in Storage settings
+  </Accordion>
+</AccordionGroup>

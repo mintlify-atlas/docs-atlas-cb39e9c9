@@ -1,0 +1,613 @@
+---
+title: Performance Optimization
+description: Tips and best practices for optimizing Segra's recording performance and minimizing impact on your games
+---
+
+Segra is designed to have minimal performance impact on your games, but optimal settings depend on your hardware. This guide will help you get the best recording quality while maintaining smooth gameplay.
+
+## Understanding Performance Impact
+
+<Info>
+  Well-configured Segra typically causes **1-5% FPS reduction** in games when using hardware encoding.
+</Info>
+
+### Performance Factors
+
+The main factors affecting performance are:
+
+1. **Encoder Type** (CPU vs GPU) - Biggest impact
+2. **Recording Resolution** - Moderate impact
+3. **Frame Rate** - Moderate impact  
+4. **Bitrate and Rate Control** - Minor impact
+5. **Audio Sources** - Minimal impact
+
+## Choosing the Right Encoder
+
+Your encoder choice is the most important performance decision.
+
+<Tabs>
+  <Tab title="NVENC (NVIDIA)">
+    **Best for**: NVIDIA RTX/GTX users
+    
+    **Pros**:
+    - Dedicated hardware encoder (no game performance impact)
+    - Excellent quality at high bitrates
+    - Support for H.264 and HEVC
+    - Very low CPU usage
+    
+    **Cons**:
+    - Requires NVIDIA GPU (GTX 600+)
+    - Consumer GPUs limited to 3 concurrent sessions
+    - Slightly larger file sizes than x264 at same quality
+    
+    **Recommended Settings**:
+    - Rate Control: **VBR** (Variable Bitrate)
+    - Preset: **Quality**
+    - Min Bitrate: 70 Mbps (1080p) / 100 Mbps (1440p)
+    - Max Bitrate: 100 Mbps (1080p) / 150 Mbps (1440p)
+  </Tab>
+  
+  <Tab title="AMF (AMD)">
+    **Best for**: AMD Radeon users
+    
+    **Pros**:
+    - Dedicated hardware encoder
+    - No game performance impact
+    - Good quality with recent drivers
+    - Lower CPU usage
+    
+    **Cons**:
+    - Requires AMD GPU (GCN or newer)
+    - Quality slightly below NVENC
+    - Requires updated AMD drivers
+    
+    **Recommended Settings**:
+    - Rate Control: **VBR**
+    - Preset: **Quality**
+    - Min Bitrate: 80 Mbps (1080p) / 110 Mbps (1440p)
+    - Max Bitrate: 110 Mbps (1080p) / 160 Mbps (1440p)
+  </Tab>
+  
+  <Tab title="QSV (Intel)">
+    **Best for**: Intel CPU with integrated graphics
+    
+    **Pros**:
+    - Uses Intel Quick Sync Video
+    - Low CPU usage
+    - Good quality on modern processors (8th gen+)
+    - Works even with dedicated GPU
+    
+    **Cons**:
+    - Requires Intel integrated graphics enabled
+    - Quality below NVENC
+    - May not work on laptops with disabled iGPU
+    
+    **Recommended Settings**:
+    - Rate Control: **VBR**
+    - Min Bitrate: 80 Mbps (1080p) / 110 Mbps (1440p)
+    - Max Bitrate: 110 Mbps (1080p) / 160 Mbps (1440p)
+  </Tab>
+  
+  <Tab title="x264 (CPU)">
+    **Best for**: Systems without hardware encoder support
+    
+    **Pros**:
+    - Works on any system
+    - Best quality per bitrate
+    - Highly configurable
+    - No GPU requirements
+    
+    **Cons**:
+    - **High CPU usage** (can impact game FPS)
+    - Not recommended for CPU-intensive games
+    - Requires powerful CPU for 1080p60
+    
+    **Recommended Settings**:
+    - Rate Control: **CRF** (Constant Rate Factor)
+    - CRF Value: **18-23** (lower = better quality)
+    - Preset: **veryfast** or **faster**
+    - Only use if you have a high-end CPU (8+ cores)
+  </Tab>
+</Tabs>
+
+<Warning>
+  **Avoid x264 encoder** if:
+  - You have a hardware encoder available (NVENC/AMF/QSV)
+  - Your game is CPU-intensive (strategy games, simulations)
+  - Your CPU has fewer than 6 cores
+</Warning>
+
+## Resolution and Frame Rate
+
+### Recording Resolution
+
+<Note>
+  Recording resolution is independent of your game resolution. You can play at 4K and record at 1080p.
+</Note>
+
+Segra automatically scales your game capture to the configured recording resolution:
+
+| Resolution | Best For | Relative Performance Impact |
+|------------|----------|----------------------------|
+| **1080p** | Most users, streaming | Baseline |
+| **1440p** | High-end systems, content creation | +30% encoding load |
+| **4K** | Professional creators, future-proofing | +100% encoding load |
+
+**Recommendations**:
+- **1080p**: Ideal for most users, good quality, small file sizes
+- **1440p**: Sweet spot for modern gaming monitors
+- **4K**: Only if you have powerful hardware and storage
+
+### Frame Rate
+
+Segra supports 30 FPS and 60 FPS recording:
+
+<CardGroup cols={2}>
+  <Card title="60 FPS Recording" icon="gauge-high">
+    **Pros**:
+    - Smooth gameplay footage
+    - Better for fast-paced games
+    - Modern standard
+    
+    **Cons**:
+    - 2x encoding load vs 30 FPS
+    - Larger file sizes
+  </Card>
+  
+  <Card title="30 FPS Recording" icon="gauge">
+    **Pros**:
+    - 50% less encoding load
+    - Smaller file sizes
+    - Still acceptable quality
+    
+    **Cons**:
+    - Choppy for fast motion
+    - Not ideal for competitive games
+  </Card>
+</CardGroup>
+
+**Recommendation**: Use **60 FPS** with hardware encoding. Only drop to 30 FPS if experiencing performance issues.
+
+## Bitrate and Quality Settings
+
+### Understanding Rate Control
+
+Segra supports multiple rate control methods:
+
+<Tabs>
+  <Tab title="VBR (Recommended)">
+    **Variable Bitrate** - Quality adapts to scene complexity
+    
+    **How it works**:
+    - Simple scenes use lower bitrate
+    - Complex/fast scenes use higher bitrate
+    - Specified as min and max range
+    
+    **Best for**:
+    - Hardware encoders (NVENC/AMF/QSV)
+    - Most efficient quality/size ratio
+    - Recording varied content
+    
+    **Recommended Values** (1080p60):
+    ```
+    Min Bitrate: 70 Mbps
+    Max Bitrate: 100 Mbps
+    ```
+  </Tab>
+  
+  <Tab title="CBR">
+    **Constant Bitrate** - Fixed bitrate throughout
+    
+    **How it works**:
+    - Always uses target bitrate
+    - Predictable file sizes
+    - May waste bits in simple scenes
+    
+    **Best for**:
+    - Streaming workflows
+    - Predictable file sizes
+    - Network recording
+    
+    **Recommended Values** (1080p60):
+    ```
+    Bitrate: 80 Mbps
+    ```
+  </Tab>
+  
+  <Tab title="CRF">
+    **Constant Rate Factor** - Fixed quality level
+    
+    **How it works**:
+    - Maintains visual quality target
+    - Bitrate varies significantly
+    - Used by x264 software encoder
+    
+    **Best for**:
+    - x264 (CPU) encoding only
+    - Archival quality recordings
+    
+    **Recommended Values**:
+    ```
+    CRF: 18-23 (lower = better)
+    ```
+  </Tab>
+  
+  <Tab title="CQP">
+    **Constant Quantization Parameter** - Hardware CRF equivalent
+    
+    **How it works**:
+    - Fixed quality per frame
+    - Similar to CRF for hardware encoders
+    - Lower values = better quality
+    
+    **Best for**:
+    - Hardware encoders preferring quality over size
+    - High-end systems
+    
+    **Recommended Values**:
+    ```
+    CQP Level: 18-23
+    ```
+  </Tab>
+</Tabs>
+
+### Bitrate Recommendations by Resolution
+
+<Info>
+  Higher bitrate = better quality but larger files. These values balance quality and file size.
+</Info>
+
+| Resolution | VBR Min | VBR Max | CBR |
+|------------|---------|---------|-----|
+| 1080p @ 30fps | 40 Mbps | 60 Mbps | 50 Mbps |
+| 1080p @ 60fps | 70 Mbps | 100 Mbps | 80 Mbps |
+| 1440p @ 30fps | 60 Mbps | 90 Mbps | 75 Mbps |
+| 1440p @ 60fps | 100 Mbps | 150 Mbps | 120 Mbps |
+| 4K @ 30fps | 100 Mbps | 150 Mbps | 125 Mbps |
+| 4K @ 60fps | 150 Mbps | 250 Mbps | 200 Mbps |
+
+## Audio Optimization
+
+### Audio Source Configuration
+
+<Tip>
+  More audio sources = minimal performance impact, but larger file sizes and more complex mixing.
+</Tip>
+
+**Best Practices**:
+
+1. **Use only needed sources**: Don't add unused microphones/devices
+2. **Force Mono for microphones**: Reduces file size with no quality loss (Settings → Audio → Force Mono)
+3. **Disable unused tracks**: Don't enable separate audio tracks unless you need them for editing
+
+### Audio Output Modes
+
+Choose the right mode for your workflow:
+
+<AccordionGroup>
+  <Accordion title="All Audio (Default)">
+    Records all desktop audio sources.
+    
+    **Performance**: Minimal impact
+    
+    **Best for**: Simple recording, no editing needed
+  </Accordion>
+  
+  <Accordion title="Game Only">
+    Records only game audio (mutes desktop audio when hooked).
+    
+    **Performance**: Same as All Audio
+    
+    **Best for**: Isolating game sounds, removing desktop notifications
+    
+    **Note**: Requires game capture to hook successfully
+  </Accordion>
+  
+  <Accordion title="Game + Discord">
+    Records game and Discord voice chat on separate tracks.
+    
+    **Performance**: Slightly higher (additional audio source)
+    
+    **Best for**: Team games, collaborative content
+    
+    **Note**: Creates separate track for Discord audio in recordings
+  </Accordion>
+</AccordionGroup>
+
+### Separate Audio Tracks
+
+<Warning>
+  Enabling separate audio tracks increases file size by ~5-10% per additional track.
+</Warning>
+
+**When to use**:
+- Advanced video editing workflows
+- Need independent volume control in post-production
+- Recording podcasts or collaborative content
+
+**When to skip**:
+- Simple clipping and sharing
+- Storage space is limited
+- Don't edit recordings
+
+## Display Capture Method
+
+Segra supports two display capture methods with different performance characteristics:
+
+<Tabs>
+  <Tab title="WGC (Recommended)">
+    **Windows Graphics Capture**
+    
+    **Performance**: Best (uses modern Windows API)
+    
+    **Requirements**: Windows 10 1903+ or Windows 11
+    
+    **Pros**:
+    - Lower CPU usage
+    - Better compatibility with multi-monitor
+    - Captures through window composition
+    - Supports variable refresh rate
+    
+    **Cons**:
+    - May not work on older Windows 10
+    - Some games have issues with WGC
+  </Tab>
+  
+  <Tab title="DXGI">
+    **Desktop Duplication API**
+    
+    **Performance**: Good (traditional method)
+    
+    **Requirements**: Windows 8+
+    
+    **Pros**:
+    - Widely compatible
+    - Works on older Windows versions
+    - More reliable for fullscreen games
+    
+    **Cons**:
+    - Slightly higher CPU usage
+    - May have issues with variable refresh rate
+  </Tab>
+</Tabs>
+
+**Recommendation**: Try **WGC** first. If you experience issues, switch to **DXGI**.
+
+## Replay Buffer Optimization
+
+### Memory Management
+
+Replay buffer keeps recent footage in memory before writing to disk:
+
+<Info>
+  Formula: **Memory Usage ≈ Duration × Bitrate ÷ 8**
+  
+  Example: 30s @ 80 Mbps = ~300 MB RAM
+</Info>
+
+**Settings to adjust**:
+
+1. **Buffer Duration** (Settings → Recording → Replay Buffer Duration)
+   - Default: 30 seconds
+   - Longer = more memory usage
+   - Recommendation: 30-60 seconds
+
+2. **Max File Size** (Settings → Recording → Replay Buffer Max Size)
+   - Default: 1000 MB (1 GB)
+   - Prevents buffer from growing too large
+   - Increase if you have RAM to spare
+
+### Hybrid Mode Considerations
+
+<Note>
+  Hybrid mode runs session recording AND replay buffer simultaneously, doubling the encoding load.
+</Note>
+
+**Performance impact of Hybrid mode**:
+- 2x encoder usage
+- 2x write operations to disk
+- Higher memory usage
+
+**Recommendations**:
+- Only use with hardware encoders (NVENC/AMF/QSV)
+- Ensure SSD for content folder (reduces disk bottleneck)
+- Monitor system performance during recording
+
+## System-Specific Optimizations
+
+### High-End Systems (RTX 3080+, Ryzen 7+)
+
+**Recommended Settings**:
+```yaml
+Encoder: NVENC/AMF
+Resolution: 1440p or 4K
+Frame Rate: 60 FPS
+Rate Control: VBR (100-150 Mbps)
+Recording Mode: Hybrid
+Audio Tracks: Separate tracks enabled
+```
+
+### Mid-Range Systems (RTX 3060, Ryzen 5)
+
+**Recommended Settings**:
+```yaml
+Encoder: NVENC/AMF/QSV
+Resolution: 1080p
+Frame Rate: 60 FPS
+Rate Control: VBR (70-100 Mbps)
+Recording Mode: Hybrid or Session
+Audio Tracks: Single track
+```
+
+### Budget Systems (GTX 1660, Intel i5)
+
+**Recommended Settings**:
+```yaml
+Encoder: NVENC/QSV (avoid x264)
+Resolution: 1080p
+Frame Rate: 60 FPS (or 30 FPS if struggling)
+Rate Control: VBR (50-70 Mbps)
+Recording Mode: Buffer only
+Audio Tracks: Single track
+```
+
+### Laptops
+
+<Warning>
+  Laptops may throttle during extended recording sessions due to thermal limits.
+</Warning>
+
+**Laptop-Specific Tips**:
+- Use laptop cooling pad
+- Set power plan to "High Performance" when recording
+- Lower bitrate to reduce heat generation
+- Ensure dedicated GPU is being used (not integrated graphics)
+- Record to external SSD if possible (reduces internal drive heat)
+
+## Storage Performance
+
+### Drive Types
+
+| Drive Type | Write Speed | Recommended Use |
+|------------|-------------|----------------|
+| **NVMe SSD** | 2000+ MB/s | Best for all resolutions/framerates |
+| **SATA SSD** | 500 MB/s | Good for 1080p/1440p |
+| **HDD (7200 RPM)** | 150 MB/s | Only for 1080p @ lower bitrates |
+| **HDD (5400 RPM)** | 100 MB/s | Not recommended |
+| **External USB 3.0** | Variable | Acceptable for SSD, avoid HDD |
+
+<Tip>
+  **Quick Math**: At 100 Mbps bitrate, you need **12.5 MB/s** sustained write speed. Most SSDs can handle this easily.
+</Tip>
+
+### Content Folder Location
+
+Optimal content folder locations:
+
+1. **Best**: Dedicated NVMe SSD (separate from OS drive)
+2. **Good**: Secondary SATA SSD
+3. **Acceptable**: Same SSD as OS (may impact system responsiveness)
+4. **Avoid**: Mechanical HDD (may cause dropped frames)
+
+## Monitoring Performance
+
+### During Recording
+
+<Steps>
+  <Step title="Check Task Manager">
+    Monitor CPU, GPU, RAM, and Disk usage:
+    - Open Task Manager (Ctrl+Shift+Esc)
+    - Performance tab
+    - Watch for maxed-out resources
+  </Step>
+  
+  <Step title="In-Game FPS Counter">
+    Use game's built-in FPS counter or tools like:
+    - NVIDIA GeForce Experience overlay
+    - MSI Afterburner
+    - Steam FPS counter
+  </Step>
+  
+  <Step title="Check Segra Logs">
+    Look for warnings about:
+    - Encoding lag
+    - Dropped frames
+    - Disk write errors
+    
+    Location: `%AppData%/Segra/logs/`
+  </Step>
+</Steps>
+
+### Signs of Performance Issues
+
+<Warning>
+  **Watch for these symptoms**:
+  - Stuttering gameplay
+  - Dropped frames in recording
+  - Audio desync
+  - Disk usage at 100%
+  - CPU/GPU maxed out
+</Warning>
+
+If you see these issues, reduce recording settings incrementally:
+1. Lower bitrate by 20%
+2. Reduce resolution one step (4K → 1440p → 1080p)
+3. Drop frame rate to 30 FPS
+4. Disable separate audio tracks
+5. Switch recording mode (Hybrid → Session or Buffer)
+
+## Advanced Tips
+
+### Process Priority
+
+<Info>
+  Segra automatically sets itself to **High** priority during recording to ensure smooth encoding.
+</Info>
+
+This is handled automatically in `OBSService.cs:928`:
+```csharp
+GeneralUtils.SetProcessPriority(ProcessPriorityClass.High);
+```
+
+### Multi-GPU Systems
+
+If you have multiple GPUs (e.g., laptop with iGPU + dGPU):
+
+1. Ensure Segra runs on dedicated GPU:
+   - Windows Settings → System → Display → Graphics
+   - Add Segra.exe → High Performance
+
+2. Use matching encoder:
+   - NVIDIA dGPU → NVENC
+   - Intel iGPU → QSV (only if game isn't GPU-intensive)
+
+### 4:3 Aspect Ratio Games
+
+<Note>
+  Segra automatically detects and stretches 4:3 content to 16:9 (configurable in Settings).
+</Note>
+
+This adds minimal performance overhead and prevents black bars in recordings.
+
+## Benchmarking Your Settings
+
+<Steps>
+  <Step title="Set Baseline">
+    Measure game FPS without recording (5-minute session)
+  </Step>
+  
+  <Step title="Test Recording">
+    Record 5 minutes with your desired settings
+    
+    Measure average FPS during recording
+  </Step>
+  
+  <Step title="Calculate Impact">
+    FPS Impact % = ((Baseline - Recording) / Baseline) × 100
+    
+    Target: < 5% impact
+  </Step>
+  
+  <Step title="Adjust Settings">
+    If impact > 5%, reduce settings incrementally
+    
+    Retest until acceptable
+  </Step>
+</Steps>
+
+## Related Resources
+
+<CardGroup cols={2}>
+  <Card title="OBS Integration" icon="circle-nodes" href="/advanced/obs-integration">
+    Understand how Segra uses OBS
+  </Card>
+  <Card title="Troubleshooting" icon="wrench" href="/advanced/troubleshooting">
+    Fix common performance issues
+  </Card>
+  <Card title="Hardware Requirements" icon="microchip" href="/installation">
+    Check system requirements
+  </Card>
+  <Card title="Contributing" icon="code" href="/advanced/contributing">
+    Improve Segra's performance
+  </Card>
+</CardGroup>

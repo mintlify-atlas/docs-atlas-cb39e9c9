@@ -1,0 +1,402 @@
+---
+title: Replay Buffer
+description: Capture instant replays of your best moments with Segra's replay buffer system
+---
+
+Replay Buffer is Segra's instant replay system that continuously records gameplay in the background and lets you save the last 30 seconds (or custom duration) with a single hotkey press.
+
+## Overview
+
+Replay Buffer works like a DVR for your gameplay:
+
+- **Always recording** - Segra continuously records in a rolling buffer
+- **Save on demand** - Press a hotkey (default: F10) to save the last N seconds
+- **No storage waste** - Only saved clips are written to disk
+- **Minimal overhead** - The buffer runs in memory with zero performance impact
+
+<Info>
+Replay Buffer is perfect for games where you don't want full sessions but need to capture unexpected amazing plays.
+</Info>
+
+## How It Works
+
+### The Rolling Buffer
+
+1. **Segra starts recording** when a game is detected (or manually)
+2. **Footage is stored in memory** in a circular buffer
+3. **Old footage is overwritten** as new frames come in
+4. **Pressing the hotkey** saves the current buffer to disk
+5. **Buffer continues** recording after the save
+
+Think of it like this:
+
+```
+[30 seconds of gameplay] → Keep recording → Amazing play happens → Press F10 → Last 30s saved
+```
+
+### Memory Management
+
+The buffer size is determined by:
+
+- **Duration** (e.g., 30 seconds)
+- **Max file size** (e.g., 1000 MB)
+
+Whichever limit is reached first stops the buffer from growing. This prevents memory overflow.
+
+## Configuration
+
+### Replay Buffer Settings
+
+Configure Replay Buffer in **Settings > Capture Mode**:
+
+#### Recording Mode
+
+Choose one of three modes:
+
+- **Replay Buffer** - Only buffer, no session recording
+- **Hybrid** - Buffer + full session recording (recommended)
+- **Session** - No buffer, full session only
+
+<Tip>
+Hybrid mode gives you the best of both worlds: instant replays via the buffer and full sessions for review.
+</Tip>
+
+#### Buffer Duration
+
+Set how many seconds of footage to keep in the buffer:
+
+- Minimum: **10 seconds**
+- Default: **30 seconds**
+- Maximum: **120 seconds** (2 minutes)
+
+**Longer buffers:**
+- Capture more context before the moment
+- Use more memory
+- May impact performance on low-end systems
+
+**Shorter buffers:**
+- Use less memory
+- Faster saves
+- May miss context for some plays
+
+<Note>
+A 30-second buffer at 1080p60 with high bitrate uses approximately 200-500 MB of RAM.
+</Note>
+
+#### Buffer Max Size
+
+Set the maximum file size for the buffer:
+
+- Default: **1000 MB** (1 GB)
+- Range: **100 MB to 5000 MB**
+
+This prevents the buffer from consuming too much memory. If the file size limit is reached before the duration, the buffer stops growing.
+
+### Hotkey Configuration
+
+Change the save hotkey in **Settings > Keybindings**:
+
+1. Navigate to **Settings > Keybindings**
+2. Find **Save Replay Buffer**
+3. Click **Edit** and press your desired key combination
+4. Default is **F10**
+
+<Warning>
+Avoid using keys that conflict with in-game bindings. F9, F10, and F11 are usually safe choices.
+</Warning>
+
+## Using Replay Buffer
+
+### Starting the Buffer
+
+<Steps>
+  <Step title="Set recording mode to Buffer or Hybrid">
+    Go to **Settings > Capture Mode** and select **Replay Buffer** or **Hybrid**.
+  </Step>
+  
+  <Step title="Launch a game">
+    Segra automatically detects the game and starts the replay buffer.
+  </Step>
+  
+  <Step title="Verify buffer is running">
+    Check the Segra interface - you should see a recording indicator.
+  </Step>
+</Steps>
+
+You can also start the buffer manually:
+
+- Click the **Record** button on the home screen
+- Segra starts the buffer using Display Capture
+- Useful for recording desktop apps, browsers, or non-game content
+
+### Saving a Replay
+
+When something amazing happens:
+
+<Steps>
+  <Step title="Press the hotkey">
+    Press **F10** (or your custom hotkey) immediately after the moment.
+  </Step>
+  
+  <Step title="Segra saves the buffer">
+    The last 30 seconds (or your custom duration) are saved to disk.
+  </Step>
+  
+  <Step title="Buffer resets">
+    The buffer is cleared and starts recording fresh footage for the next save.
+  </Step>
+  
+  <Step title="Find your clip">
+    The saved replay appears in the **Replay Buffer** section.
+  </Step>
+</Steps>
+
+<Tip>
+Press the hotkey as soon as possible after the moment. If you wait too long, the buffer may have already overwritten the footage.
+</Tip>
+
+### Buffer Reset Behavior
+
+After saving a replay:
+
+- The **buffer is stopped**
+- The saved file is written to disk
+- Metadata, thumbnail, and waveform are generated
+- The **buffer restarts** automatically
+
+This ensures that subsequent saves only contain new footage, not duplicate content from previous saves.
+
+<Note>
+There's a brief gap (1-2 seconds) during the reset process. Avoid pressing the save hotkey multiple times rapidly.
+</Note>
+
+## Replay Buffer vs Other Modes
+
+### Replay Buffer Mode
+
+**Pros:**
+- Minimal storage usage - only saves what you want
+- Fast saves - near-instant clip creation
+- Perfect for highlight-only gaming
+
+**Cons:**
+- No full session review
+- No bookmarks or game integration
+- Can't go back further than buffer duration
+- No AI-generated highlights
+
+**Best for:** Casual gaming, social media clips, low storage systems
+
+### Session Mode
+
+**Pros:**
+- Full game session saved
+- Game integration with automatic bookmarks
+- AI-powered highlight generation
+- Timeline review and analysis
+
+**Cons:**
+- Uses significant storage
+- Can't save instant replays without stopping the recording
+- Requires post-game review to find moments
+
+**Best for:** Content creators, streamers, competitive players
+
+### Hybrid Mode (Recommended)
+
+**Pros:**
+- Instant replays during gameplay (buffer)
+- Full session saved for review (session)
+- All game integration features
+- Best of both worlds
+
+**Cons:**
+- Uses the most storage (session + saved buffers)
+- Slightly higher system resource usage
+
+**Best for:** Most users who want flexibility
+
+## Replay Buffer Output
+
+Saved replays are organized by game:
+
+```
+Segra/
+└── Buffers/
+    ├── Counter-Strike 2/
+    │   ├── 2024-01-15_14-30-45.mp4
+    │   └── 2024-01-15_14-35-22.mp4
+    ├── Valorant/
+    │   └── 2024-01-15_15-12-08.mp4
+    └── Apex Legends/
+        └── 2024-01-16_18-45-33.mp4
+```
+
+Each saved replay includes:
+
+- **Video file** (.mp4) with the buffer content
+- **Metadata** - Game name, timestamp, duration
+- **Thumbnail** - Auto-generated preview
+- **Waveform** - Audio visualization
+
+### Viewing Saved Replays
+
+Access saved replays in the **Replay Buffer** section:
+
+- Click the **Replay Buffer** tab in Segra
+- Replays are sorted by date (newest first)
+- Click any replay to watch in the built-in player
+- Right-click for options (rename, delete, show in folder)
+
+### Sharing Replays
+
+Saved replays are standard MP4 files that can be:
+
+- Uploaded to Segra Cloud (click the upload icon)
+- Shared directly to YouTube, Twitter, TikTok, etc.
+- Edited in video editing software
+- Sent to friends via file sharing
+
+See the [Uploads](/features/uploads) page for cloud sharing details.
+
+## Advanced Features
+
+### Multiple Saves Per Session
+
+You can save the buffer multiple times during a single gaming session:
+
+1. Amazing play happens → Press F10 → Saved as `14-30-45.mp4`
+2. Buffer resets and continues recording
+3. Another amazing play → Press F10 → Saved as `14-35-22.mp4`
+4. Repeat as many times as you want
+
+Each save creates a separate file with no overlap.
+
+### Audio Tracks
+
+Replay buffer recordings support the same audio features as sessions:
+
+- **Multiple audio sources** (microphone, desktop audio, game audio)
+- **Separate audio tracks** (if enabled in settings)
+- **Volume control** per device
+
+Configure audio in **Settings > Audio Devices**.
+
+### Quality Settings
+
+Replay buffer uses your main recording quality settings:
+
+- Go to **Settings > Video** to adjust resolution, bitrate, encoder
+- Changes apply to both session and buffer recordings
+- Higher quality = larger buffer memory usage
+
+<Tip>
+If you only use Replay Buffer mode (not Hybrid), you can lower quality settings to reduce memory usage without affecting file sizes much.
+</Tip>
+
+## Performance Optimization
+
+### Reducing Memory Usage
+
+If Segra is using too much RAM:
+
+- **Lower buffer duration** (30s → 20s or 15s)
+- **Reduce max buffer size** (1000 MB → 500 MB)
+- **Lower recording quality** (1440p → 1080p or 60fps → 30fps)
+- **Use VBR instead of CBR** rate control
+
+### Reducing Disk I/O
+
+Each save writes to disk. To minimize impact:
+
+- Save replays to an **SSD** (much faster than HDD)
+- Don't spam the save hotkey (allow buffer to reset between saves)
+- Close other disk-intensive applications while recording
+
+### GPU vs CPU Encoding
+
+Replay buffer works best with **GPU encoding**:
+
+- NVIDIA NVENC, AMD AMF, or Intel QuickSync
+- Near-zero performance impact on gameplay
+- Fast encoding means quicker saves
+
+CPU encoding works but may cause frame drops during saves.
+
+## Troubleshooting
+
+<AccordionGroup>
+  <Accordion title="Buffer not saving">
+    - Verify the buffer is actually running (check recording indicator)
+    - Make sure you're pressing the correct hotkey (default: F10)
+    - Check that **Replay Buffer** or **Hybrid** mode is selected
+    - Restart Segra if the buffer appears stuck
+  </Accordion>
+  
+  <Accordion title="Saved replay is shorter than expected">
+    - Check your **buffer duration** setting (may be less than 30s)
+    - Ensure **max buffer size** isn't reached before duration
+    - If you pressed the hotkey too late, the moment may have been overwritten
+  </Accordion>
+  
+  <Accordion title="Game stutters when saving">
+    - Switch to **GPU encoding** in **Settings > Video**
+    - Lower your recording quality (resolution or bitrate)
+    - Reduce buffer duration to decrease memory pressure
+    - Ensure Segra is running on an SSD, not HDD
+  </Accordion>
+  
+  <Accordion title="Replay has no audio">
+    - Check **Settings > Audio Devices** - ensure devices are selected
+    - Test with a manual recording to verify audio setup
+    - Make sure volume levels aren't set to 0
+  </Accordion>
+  
+  <Accordion title="Out of memory errors">
+    - Reduce **buffer duration** (30s → 15s)
+    - Lower **max buffer size** (1000 MB → 500 MB)
+    - Close other memory-intensive applications
+    - Reduce recording quality (1440p → 1080p)
+  </Accordion>
+</AccordionGroup>
+
+## Use Cases
+
+### Battle Royale Games
+
+Replay Buffer is perfect for games like Fortnite, Apex Legends, Warzone:
+
+- Most of the game is boring
+- Amazing plays happen unexpectedly
+- You don't want to save the full 20-minute match
+- Just save the final kill or clutch moment
+
+### Fighting Games
+
+For Street Fighter, Tekken, Guilty Gear:
+
+- Save sick combos instantly
+- Capture unexpected comebacks
+- Don't need full matches recorded
+
+### Multiplayer Shooters
+
+For Valorant, CS2, Overwatch:
+
+- Save insane flicks or aces
+- Capture funny moments with friends
+- Keep storage usage low across many games
+
+### Social Media Content
+
+Replay Buffer is ideal for creating short-form content:
+
+- 15-30 second clips are perfect for Twitter, TikTok, Instagram
+- Save only highlight-worthy moments
+- No need to edit down long sessions
+
+## Related Features
+
+- [Recording](/features/recording) - Full session and hybrid recording modes
+- [Clipping](/features/clipping) - Edit and combine saved replays
+- [Uploads](/features/uploads) - Share replays online
