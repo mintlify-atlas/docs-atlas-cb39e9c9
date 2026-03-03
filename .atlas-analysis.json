@@ -1,0 +1,96 @@
+{
+  "projectType": "saas",
+  "projectName": "Segra",
+  "projectDescription": "Open-source game recorder built on OBS for capturing gameplay, clipping highlights, and uploading to Segra.tv.",
+  "theme": "aspen",
+  "primaryColor": "#7C3AED",
+  "lightColor": "#A78BFA",
+  "darkColor": "#5B21B6",
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Get Started",
+            "pages": [
+              "introduction",
+              "installation",
+              "quickstart"
+            ]
+          },
+          {
+            "group": "Core Features",
+            "pages": [
+              "features/recording",
+              "features/clipping",
+              "features/highlights",
+              "features/replay-buffer",
+              "features/uploads"
+            ]
+          },
+          {
+            "group": "Configuration",
+            "pages": [
+              "configuration/settings",
+              "configuration/hotkeys",
+              "configuration/game-integration",
+              "configuration/video-presets",
+              "configuration/storage"
+            ]
+          },
+          {
+            "group": "Advanced",
+            "pages": [
+              "advanced/obs-integration",
+              "advanced/troubleshooting",
+              "advanced/performance",
+              "advanced/contributing"
+            ]
+          }
+        ]
+      },
+      {
+        "tab": "API Reference",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": [
+              "api/overview",
+              "api/websocket-api"
+            ]
+          },
+          {
+            "group": "Core Services",
+            "pages": [
+              "api/recording-service",
+              "api/clip-service",
+              "api/game-detection-service"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Auto-start recording when games launch",
+    "Instant replay buffer for saving highlights",
+    "AI-powered highlight detection from game stats",
+    "Direct upload to Segra.tv",
+    "OBS-based 4K/144 FPS capture",
+    "Game integration (CS2, League of Legends)",
+    "Hardware encoding (NVENC, AMD VCE)",
+    "Customizable hotkeys and presets"
+  ],
+  "publicApiSurface": [
+    "WebSocket API for frontend communication",
+    "MessageService.HandleMessage",
+    "OBSService recording controls",
+    "GameDetectionService.StartAsync",
+    "ClipService.CreateClip",
+    "HighlightService.GenerateHighlight",
+    "UploadService.UploadToSegra",
+    "SettingsService settings management",
+    "AuthService.TryAutoLogin"
+  ]
+}
